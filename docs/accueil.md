@@ -120,3 +120,5 @@
         </div>
 
         Vise à imaginer, créer, concevoir et réaliser les produits futurs. S'inscrit dans une démarche de projet et intègre l'expérimentation sur prototype. S'apparente à la technologie générique (analyse des logiques d'invention). Mobilise fortement les technologies numériques.
+
+    
