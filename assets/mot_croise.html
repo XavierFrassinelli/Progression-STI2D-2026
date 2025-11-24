@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mots Croisés – Système Automatique</title>
+
+  <style>
+    body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  table {
+    border-collapse: collapse;
+  }
+  td {
+    width: 40px;
+    height: 40px;
+    text-align: center;
+    border: 1px solid #000;
+    font-size: 20px;
+  }
+  .black {
+    background: #000;
+  }
+  input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 20px;
+  }
+  .definitions {
+    margin-top: 20px;
+    max-width: 400px;
+  }body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: #f5f7fa;
+  }
+  table {
+    border-collapse: collapse;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    margin-top: 20px;
+  }
+  td {
+    width: 42px;
+    height: 42px;
+    text-align: center;
+    border: 1px solid #bbb;
+    font-size: 20px;
+    background: #fff;
+  }
+  .black {
+    background: #333;
+  }
+  input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 20px;
+    background: transparent;
+  }
+  .definitions {
+    margin-top: 25px;
+    max-width: 450px;
+    background: #ffffff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  }
+  h2 {
+    margin: 0;
+    font-size: 26px;
+  }
+
+.highlight { background: #dce8ff !important; }
+  @media (max-width: 600px) {
+    td { width: 30px; height: 30px; font-size: 16px; }
+    input { font-size: 16px; }
+  }:root{--cell-size:42px}
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: #f5f7fa;
+  }
+  .board-wrap{overflow:auto}
+  table {
+    border-collapse: collapse;
+    box-shadow: 0 0 12px rgba(0,0,0,0.08);
+    margin-top: 20px;
+    background: transparent;
+  }
+  td {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    text-align: center;
+    border: 1px solid #d0d7e6;
+    font-size: 20px;
+    background: #fff;
+    position: relative;
+    padding: 0;
+  }
+  .black {
+    background: #333;
+  }
+  input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 20px;
+    background: transparent;
+    text-transform: uppercase;
+    outline: none;
+    caret-color: #333;
+  }
+  .definitions {
+    margin-top: 18px;
+    max-width: 640px;
+    background: #ffffff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.06);
+  }
+  h2 { margin: 0; font-size: 26px; }
+  .num{ position:absolute; top:3px; left:5px; font-size:11px; color:#6b7280; }
+  .controls{ margin-top:12px; display:flex; gap:8px }
+  button{ padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; cursor:pointer }
+  button.secondary{ background:#f0f4ff }
+  .highlight { background: #e6f0ff !important; }
+  @media (max-width: 720px) {
+    :root{--cell-size:34px}
+    td{font-size:16px}
+    input{font-size:16px}
+    .definitions{padding:12px}
+  }:root{
+    --cell-size:48px;
+    --primary:#3b82f6;
+    --success:#10b981;
+    --error:#ef4444;
+    --bg:#f8fafc;
+    --card:#ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    margin: 0;
+  }
+  .container {
+    max-width: 900px;
+    width: 100%;
+  }
+  .header {
+    background: var(--card);
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .header h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 15px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--success));
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  .board-wrap{
+    overflow: auto;
+    background: var(--card);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+  }
+  table {
+    border-collapse: collapse;
+    margin: 0 auto;
+    background: transparent;
+  }
+  td {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    text-align: center;
+    border: 2px solid #cbd5e1;
+    font-size: 22px;
+    background: #fff;
+    position: relative;
+    padding: 0;
+    transition: all 0.2s ease;
+  }
+  td:not(.black):hover {
+    border-color: var(--primary);
+    transform: scale(1.05);
+  }
+  .black {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-color: #475569;
+  }
+  input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    background: transparent;
+    text-transform: uppercase;
+    outline: none;
+    caret-color: var(--primary);
+    color: #1e293b;
+  }
+  .num{
+    position:absolute;
+    top:2px;
+    left:4px;
+    font-size:10px;
+    font-weight: 700;
+    color:#64748b;
+    background: #f1f5f9;
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+  .controls{
+    display:flex;
+    gap:12px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  button{
+    padding:12px 24px;
+    border-radius:10px;
+    border:none;
+    background: var(--card);
+    cursor:pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+  button:active {
+    transform: translateY(0);
+  }
+  #reset {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    color: white;
+  }
+  #check {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+  }
+  #hint {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+  }
+  .definitions {
+    background: var(--card);
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  }
+  .definitions h3 {
+    margin: 0 0 20px 0;
+    font-size: 24px;
+    color: #1e293b;
+    border-bottom: 3px solid var(--primary);
+    padding-bottom: 10px;
+  }
+  .def-item {
+    background: #f8fafc;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+    transition: all 0.2s ease;
+  }
+  .def-item:hover {
+    background: #f1f5f9;
+    transform: translateX(5px);
+  }
+  .def-item strong {
+    color: var(--primary);
+    font-size: 16px;
+  }
+  .highlight {
+    background: #dbeafe !important;
+    border-color: var(--primary) !important;
+  }
+  .correct {
+    background: #d1fae5 !important;
+    animation: correctPulse 0.5s ease;
+  }
+  .incorrect {
+    background: #fee2e2 !important;
+    animation: shake 0.5s ease;
+  }
+  @keyframes correctPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  @keyframes confetti {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
+  }
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: var(--primary);
+    animation: confetti 3s ease-out forwards;
+    pointer-events: none;
+  }
+  .stats {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #64748b;
+  }
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  @media (max-width: 768px) {
+    :root{--cell-size:38px}
+    td{font-size:18px}
+    input{font-size:18px}
+    .header h1 { font-size: 24px; }
+    .board-wrap{padding:15px}
+    .definitions{padding:15px}
+    button{padding:10px 18px; font-size:14px}
+  }
+  </style>
+
+  
+</head>
+<body>
+  <div class="container">
+  <div class="header">
+    <h1>🎯 Mots Croisés – Chaîne d'information</h1>
+    <div class="stats">
+      <div class="stat-item">📝 <span id="filled">0</span>/27 cases</div>
+      <div class="stat-item">✅ <span id="correct-count">0</span> correctes</div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress"></div>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <table>
+      <tr>
+        <td><span class="num">1</span><input maxlength="1" data-key="0,0"></td>
+        <td><input maxlength="1" data-key="0,1"></td>
+        <td><input maxlength="1" data-key="0,2"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><span class="num">5</span><input maxlength="1" data-key="0,9"></td>
+      </tr>
+      <tr>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><span class="num">2</span><input maxlength="1" data-key="1,3"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="1,9"></td>
+      </tr>
+      <tr>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="2,3"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="2,9"></td>
+      </tr>
+      <tr>
+        <td><span class="num">4</span><input maxlength="1" data-key="3,0"></td>
+        <td><input maxlength="1" data-key="3,1"></td>
+        <td><input maxlength="1" data-key="3,2"></td>
+        <td><input maxlength="1" data-key="3,3"></td>
+        <td><input maxlength="1" data-key="3,4"></td>
+        <td><input maxlength="1" data-key="3,5"></td>
+        <td><input maxlength="1" data-key="3,6"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="3,9"></td>
+      </tr>
+      <tr>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="4,3"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="4,9"></td>
+      </tr>
+      <tr>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="5,3"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="5,9"></td>
+      </tr>
+      <tr>
+        <td class="black"></td>
+        <td><span class="num">3</span><input maxlength="1" data-key="6,0"></td>
+        <td><input maxlength="1" data-key="6,2"></td>
+        <td><input maxlength="1" data-key="6,3"></td>
+        <td><input maxlength="1" data-key="6,4"></td>
+        <td><input maxlength="1" data-key="6,5"></td>
+        <td><input maxlength="1" data-key="6,6"></td>
+        <td><input maxlength="1" data-key="6,7"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="6,9"></td>
+      </tr>
+      <tr>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="7,3"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="7,9"></td>
+      </tr>
+      <tr>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="8,9"></td>
+      </tr>
+      <tr>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td class="black"></td>
+        <td><input maxlength="1" data-key="9,9"></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="controls">
+    <button id="reset">🔄 Réinitialiser</button>
+    <button id="check">✓ Vérifier</button>
+    <button id="hint">💡 Indice</button>
+  </div>
+
+  <div class="definitions">
+    <h3>📋 Définitions</h3>
+    <div class="def-item">
+      <strong>Horizontal 1 :</strong> Permet à l'utilisateur de dialoguer avec le système. (3 lettres)
+    </div>
+    <div class="def-item">
+      <strong>Horizontal 3 :</strong> Le wifi en est un exemple. (7 lettres)
+    </div>
+    <div class="def-item">
+      <strong>Horizontal 4 :</strong> Élément qui transforme un signal physique en information exploitable. (8 lettres)
+    </div>
+    <div class="def-item">
+      <strong>Vertical 2 :</strong> L'ordre final est transmis via une liaison de quel type ? (7 lettres)
+    </div>
+    <div class="def-item">
+      <strong>Vertical 5 :</strong> Partie de la chaîne d'information qui analyse et décide. (10 lettres)
+    </div>
+  </div>
+</div>
+
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const inputs = Array.from(document.querySelectorAll('table input'));
+  const cells = Array.from(document.querySelectorAll('table td'));
+  let currentDirection = 'horizontal';
+
+  const solution = {
+  '0,0':'I','0,1':'H','0,2':'M',
+  // mot "SANSFIL" sur la ligne 6 (colonnes 1..7)
+  '6,1':'S','6,2':'A','6,3':'N','6,4':'S','6,5':'F','6,6':'I','6,7':'L',
+  '1,3':'I','2,3':'N','3,3':'T','4,3':'E','5,3':'R','6,3':'N','7,3':'E',
+  '3,0':'C','3,1':'A','3,2':'P','3,3':'T','3,4':'E','3,5':'U','3,6':'R',
+  '0,9':'T','1,9':'R','2,9':'A','3,9':'I','4,9':'T','5,9':'E','6,9':'M','7,9':'E','8,9':'N','9,9':'T'
+};
+
+  function updateProgress() {
+    const filled = inputs.filter(i => i.value.trim() !== '').length;
+    const total = inputs.length;
+    const percent = total ? (filled / total) * 100 : 0;
+    const progress = document.getElementById('progress');
+    const filledEl = document.getElementById('filled');
+    const correctEl = document.getElementById('correct-count');
+    if (progress) progress.style.width = percent + '%';
+    if (filledEl) filledEl.textContent = filled;
+    let correctCount = 0;
+    inputs.forEach(inp => {
+      const key = inp.dataset.key;
+      if (solution[key] && inp.value === solution[key]) correctCount++;
+    });
+    if (correctEl) correctEl.textContent = correctCount;
+  }
+
+  function getNextInput(inp, direction) {
+    const td = inp.parentElement;
+    const row = td.parentElement;
+    const rows = Array.from(row.parentElement.children);
+    const rowIndex = rows.indexOf(row);
+    const colIndex = Array.from(row.children).indexOf(td);
+
+    if (direction === 'horizontal') {
+      for (let c = colIndex + 1; c < row.children.length; c++) {
+        const cell = row.children[c];
+        if (!cell.classList.contains('black')) return cell.querySelector('input');
+      }
+    } else {
+      for (let r = rowIndex + 1; r < rows.length; r++) {
+        const cell = rows[r].children[colIndex];
+        if (cell && !cell.classList.contains('black')) return cell.querySelector('input');
+      }
+    }
+    return null;
+  }
+
+  function getPrevInput(inp, direction) {
+    const td = inp.parentElement;
+    const row = td.parentElement;
+    const rows = Array.from(row.parentElement.children);
+    const rowIndex = rows.indexOf(row);
+    const colIndex = Array.from(row.children).indexOf(td);
+
+    if (direction === 'horizontal') {
+      for (let c = colIndex - 1; c >= 0; c--) {
+        const cell = row.children[c];
+        if (!cell.classList.contains('black')) return cell.querySelector('input');
+      }
+    } else {
+      for (let r = rowIndex - 1; r >= 0; r--) {
+        const cell = rows[r].children[colIndex];
+        if (cell && !cell.classList.contains('black')) return cell.querySelector('input');
+      }
+    }
+    return null;
+  }
+
+  // Attach listeners to inputs
+  inputs.forEach(inp => {
+    inp.addEventListener('input', () => {
+      inp.value = inp.value.replace(/[^A-Za-zÀ-ÿ]/g, '').toUpperCase().slice(0,1);
+      updateProgress();
+      const next = getNextInput(inp, currentDirection);
+      if (next) next.focus();
+    });
+
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !inp.value) {
+        const prev = getPrevInput(inp, currentDirection);
+        if (prev) { prev.focus(); prev.value = ''; updateProgress(); }
+      } else if (e.key === 'ArrowRight') {
+        const next = getNextInput(inp, 'horizontal');
+        if (next) next.focus();
+      } else if (e.key === 'ArrowLeft') {
+        const prev = getPrevInput(inp, 'horizontal');
+        if (prev) prev.focus();
+      } else if (e.key === 'ArrowDown') {
+        const next = getNextInput(inp, 'vertical');
+        if (next) next.focus();
+      } else if (e.key === 'ArrowUp') {
+        const prev = getPrevInput(inp, 'vertical');
+        if (prev) prev.focus();
+      }
+    });
+
+    inp.addEventListener('focus', () => {
+      cells.forEach(c => c.classList.remove('highlight'));
+      const td = inp.parentElement;
+      const row = td.parentElement;
+      const colIndex = Array.from(row.children).indexOf(td);
+      const rows = Array.from(row.parentElement.children);
+
+      const hasHorizontal = Array.from(row.children).some((c, i) => i !== colIndex && !c.classList.contains('black'));
+      const hasVertical = rows.some(r => {
+        const cell = r.children[colIndex];
+        return cell && !cell.classList.contains('black') && cell !== td;
+      });
+
+      if (hasHorizontal && !hasVertical) currentDirection = 'horizontal';
+      if (hasVertical && !hasHorizontal) currentDirection = 'vertical';
+      // if both, keep currentDirection
+
+      if (currentDirection === 'horizontal') {
+        Array.from(row.children).forEach(c => { if (!c.classList.contains('black')) c.classList.add('highlight'); });
+      } else {
+        rows.forEach(r => {
+          const cell = r.children[colIndex];
+          if (cell && !cell.classList.contains('black')) cell.classList.add('highlight');
+        });
+      }
+    });
+
+    // click toggles direction at intersections
+    inp.addEventListener('click', () => {
+      const td = inp.parentElement;
+      const row = td.parentElement;
+      const colIndex = Array.from(row.children).indexOf(td);
+      const rows = Array.from(row.parentElement.children);
+
+      const hasHorizontal = Array.from(row.children).some((c, i) => i !== colIndex && !c.classList.contains('black'));
+      const hasVertical = rows.some(r => {
+        const cell = r.children[colIndex];
+        return cell && !cell.classList.contains('black') && cell !== td;
+      });
+
+      if (hasHorizontal && hasVertical) {
+        currentDirection = (currentDirection === 'horizontal') ? 'vertical' : 'horizontal';
+        cells.forEach(c => c.classList.remove('highlight'));
+        if (currentDirection === 'horizontal') {
+          Array.from(row.children).forEach(c => { if (!c.classList.contains('black')) c.classList.add('highlight'); });
+        } else {
+          rows.forEach(r => {
+            const cell = r.children[colIndex];
+            if (cell && !cell.classList.contains('black')) cell.classList.add('highlight');
+          });
+        }
+      }
+    });
+  });
+
+  // Buttons
+  const resetBtn = document.getElementById('reset');
+  const checkBtn = document.getElementById('check');
+  const hintBtn = document.getElementById('hint');
+
+  resetBtn && resetBtn.addEventListener('click', () => {
+    inputs.forEach(i => { i.value = ''; i.parentElement.classList.remove('correct','incorrect'); });
+    updateProgress();
+    const first = inputs.find(i => !i.parentElement.classList.contains('black'));
+    if (first) first.focus();
+  });
+
+  function checkAnswers() {
+    let wrong = 0, correct = 0;
+    inputs.forEach(inp => {
+      const td = inp.parentElement;
+      const key = inp.dataset.key;
+      td.classList.remove('correct','incorrect');
+      if (solution[key]) {
+        if (inp.value === solution[key]) {
+          correct++;
+          td.classList.add('correct');
+        } else if (inp.value) {
+          wrong++;
+          td.classList.add('incorrect');
+          setTimeout(() => td.classList.remove('incorrect'), 800);
+        }
+      }
+    });
+    setTimeout(() => {
+      if (wrong === 0 && correct === Object.keys(solution).length) {
+        // celebration
+        alert('🎉 Bravo ! Toutes les réponses sont correctes !');
+      } else if (wrong === 0) {
+        alert('✅ Aucune erreur détectée ! Continuez à remplir les cases vides.');
+      } else {
+        alert(`❌ ${wrong} erreur(s) détectée(s). Réessayez !`);
+      }
+    }, 50);
+  }
+
+  checkBtn && checkBtn.addEventListener('click', checkAnswers);
+
+  hintBtn && hintBtn.addEventListener('click', () => {
+    const empty = inputs.filter(i => !i.value && solution[i.dataset.key]);
+    if (empty.length > 0) {
+      const random = empty[Math.floor(Math.random() * empty.length)];
+      const key = random.dataset.key;
+      random.value = solution[key];
+      random.parentElement.classList.add('correct');
+      updateProgress();
+      alert('💡 Un indice a été ajouté !');
+    } else {
+      alert('✨ Toutes les cases sont déjà remplies !');
+    }
+  });
+
+  // init
+  updateProgress();
+  const start = inputs.find(i => !i.parentElement.classList.contains('black'));
+  if (start) start.focus();
+});
+</script>
+</body>
+</html>
