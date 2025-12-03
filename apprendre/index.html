@@ -8,13 +8,11 @@
       
       
       
-        <link rel="canonical" href="https://lidlkidjoe.github.io/Progression-STI2D-2025/Ressources/">
+        <link rel="canonical" href="https://lidlkidjoe.github.io/Progression-STI2D-2025/apprendre/">
       
       
-        <link rel="prev" href="../Terminale/">
+        <link rel="prev" href="../Ressources/">
       
-      
-        <link rel="next" href="../apprendre/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +20,7 @@
     
     
       
-        <title>Ressources - Progression STI2D</title>
+        <title>Apprendre - Progression STI2D</title>
       
     
     
@@ -74,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#documents-daccompagnement" class="md-skip">
+        <a href="#apprendre-en-samusant" class="md-skip">
           Aller au contenu
         </a>
       
@@ -109,7 +107,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Ressources
+              Apprendre
             
           </span>
         </div>
@@ -295,7 +293,7 @@
   
   
   <span class="md-ellipsis">
-    Accueil
+    [Protected] Accueil
     
   </span>
   
@@ -623,7 +621,7 @@
   
   
   <span class="md-ellipsis">
-    Terminale
+    [Protected] Terminale
     
   </span>
   
@@ -677,6 +675,29 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../Ressources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Ressources
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -694,36 +715,13 @@
   
   
   <span class="md-ellipsis">
-    Ressources
-    
-  </span>
-  
-
-      </a>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../apprendre/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
     Apprendre
     
   </span>
   
 
       </a>
+      
     </li>
   
 
@@ -770,15 +768,40 @@
 
 
 
-<h1 id="documents-daccompagnement">Documents d'accompagnement</h1>
-<iframe src="/Progression-STI2D-2025/assets/fichiers/ressources/accompagnement_ett.pdf" width="100%" height="400px"></iframe>
+<h1 id="apprendre-en-samusant">Apprendre en s'amusant</h1>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.11.0/brython.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.11.0/brython_stdlib.min.js"></script>
 
-<iframe src="/Progression-STI2D-2025/assets/fichiers/ressources/accompagnement_spe.pdf" width="100%" height="400px"></iframe>
+<p><strong>Question :</strong> Quelle est la valeur de 3 * 7 ?</p>
+<div style="margin: 20px 0;">
+    <input id="reponse_eleve" placeholder="Votre réponse ici" style="padding: 5px;">
+    <button id="bouton_valider" style="padding: 5px; cursor: pointer;">Valider</button>
+</div>
 
-<ul>
-<li><u>Jeu chaîne information :</u>
-        <iframe src="../assets/mot_croise.html" style="width:100%;height:800px;border:0;" title="Mots croisés"></iframe></li>
-</ul>
+<div id="resultat" style="font-weight:bold; min-height: 20px;"></div>
+
+<script type="text/python">
+from browser import document, alert
+
+def verifier(ev):
+    # On récupère la valeur
+    reponse = document["reponse_eleve"].value
+
+    # Vérification
+    if reponse.strip() == "21":
+        document["resultat"].text = "✅ Bravo ! C'est la bonne réponse."
+        document["resultat"].style.color = "green"
+    else:
+        document["resultat"].text = "❌ Faux, c'est incorrect."
+        document["resultat"].style.color = "red"
+
+# On attache le clic du bouton à la fonction
+document["bouton_valider"].bind("click", verifier)
+</script>
+
+<script>
+    brython();
+</script>
 
 
 

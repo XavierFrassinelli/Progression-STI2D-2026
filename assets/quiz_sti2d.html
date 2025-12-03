@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz STI2D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.11.0/brython.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.11.0/brython_stdlib.min.js"></script>
+    
+    <style>
+        body { font-family: 'Helvetica', sans-serif; background-color: #ECF0F1; text-align: center; margin: 0; }
+        .header { background-color: #2C3E50; color: white; padding: 20px; }
+        
+        /* Zone de Jeu */
+        .question-box { font-size: 1.2em; margin: 20px; color: #2C3E50; font-weight: bold; }
+        .img-container { background: white; padding: 10px; border: 2px solid #ddd; display: inline-block; border-radius: 8px;}
+        img { max-width: 300px; height: auto; display: block; }
+        
+        .grid-buttons { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; 
+            max-width: 600px; margin: 20px auto; 
+        }
+        button {
+            padding: 15px; font-size: 1em; background: white; border: 1px solid #BDC3C7; cursor: pointer;
+            transition: 0.3s; border-radius: 5px; color: #2C3E50;
+        }
+        button:hover { background-color: #E67E22; color: white; }
+        
+        .correct { background-color: #2ECC71 !important; color: white; border-color: #27ae60; }
+        .wrong { background-color: #E74C3C !important; color: white; border-color: #c0392b; }
+
+        /* Écran de Fin */
+        #ecran_fin { display: none; margin-top: 50px; }
+        .note-finale { font-size: 3em; font-weight: bold; color: #E67E22; margin: 20px 0; }
+        .appreciation { font-size: 1.5em; font-style: italic; color: #7F8C8D; margin-bottom: 30px; }
+        .btn-restart { background-color: #2ECC71; color: white; font-weight: bold; padding: 15px 30px; font-size: 1.2em; border:none; }
+        .btn-restart:hover { background-color: #27ae60; }
+    </style>
+</head>
+
+<body onload="brython()">
+
+    <div class="header">
+        <h1>QUIZ : Chaîne d'information</h1>
+        <div id="progression">Question 1 / 20 | Score : 0</div>
+    </div>
+
+    <div id="ecran_jeu">
+        <div class="question-box" id="lbl_question">Chargement...</div>
+
+        <div class="img-container">
+            <img id="img_composant" src="" alt="Composant">
+        </div>
+
+        <div class="grid-buttons" id="zone_boutons">
+            <button id="btn0">A</button>
+            <button id="btn1">B</button>
+            <button id="btn2">C</button>
+            <button id="btn3">D</button>
+        </div>
+        
+        <div id="feedback" style="height: 30px; font-weight: bold; margin-top: 10px;"></div>
+    </div>
+
+    <div id="ecran_fin">
+        <h2>TERMINÉ !</h2>
+        <div class="note-finale" id="txt_note">Note : 20 / 20</div>
+        <div class="appreciation" id="txt_appr">Parfait !</div>
+        <button class="btn-restart" id="btn_rejouer">Rejouer une partie</button>
+    </div>
+
+    <script type="text/python">
+        from browser import document, timer
+        import random
+
+        # --- DONNÉES ---
+        database = {
+            "LM35.jpg": {"nom": "Capteur LM35", "fonction": "Acquérir (Température)"},
+            "photoresistance.jpg": {"nom": "Photorésistance (LDR)", "fonction": "Acquérir (Luminosité)"},
+            "ultrason.jpg": {"nom": "Module Ultrason HC-SR04", "fonction": "Acquérir (Distance)"},
+            "capteur_mouv.jpg": {"nom": "Détecteur PIR", "fonction": "Acquérir (Mouvement)"},
+            "arduino.jpg": {"nom": "Carte Arduino Uno", "fonction": "Traiter (Microcontrôleur)"},
+            "esp32.jpg": {"nom": "Module ESP32", "fonction": "Traiter & Communiquer (Wifi/BT)"},
+            "terminal_wio.jpg": {"nom": "Wio Terminal", "fonction": "Traiter & Afficher"},
+            "api.jpg": {"nom": "Interface API", "fonction": "Traiter "},
+            "RJ45.jpg": {"nom": "Câble Ethernet (RJ45)", "fonction": "Communiquer (Filaire)"},
+            "ER_radio.jpg": {"nom": "Module Radio 433MHz", "fonction": "Communiquer (Sans-fil)"},
+            "buzzer.jpg": {"nom": "Buzzer Piézo", "fonction": "Communiquer (Son)"},
+            "ecran_7.jpg": {"nom": "Écran Tactile 7 pouces", "fonction": "Communiquer (Image/IHM)"},
+            "vidreur_smartphone.jpg": {"nom": "Moteur Vibreur", "fonction": "Communiquer (vibration)"}
+        }
+
+        MAX_QUESTIONS = 20
+        
+        # Variables globales
+        current_good_answer = ""
+        score = 0
+        nb_questions = 0
+        buttons = [document[f"btn{i}"] for i in range(4)]
+        can_click = True
+
+        def afficher_fin():
+            # Masquer le jeu, afficher la fin
+            document["ecran_jeu"].style.display = "none"
+            document["ecran_fin"].style.display = "block"
+            document["progression"].text = "Terminé"
+            
+            # Affichage de la note
+            document["txt_note"].text = f"Note : {score} / {MAX_QUESTIONS}"
+            
+            # Calcul Appréciation (Selon votre barème original)
+            appr = ""
+            if score == 20: appr = "PARFAIT ! Un futur ingénieur !"
+            elif score >= 16: appr = "Excellent travail !"
+            elif score >= 12: appr = "Bien, connaissances solides."
+            elif score >= 10: appr = "Moyen, encore quelques efforts."
+            else: appr = "Connaissances fragiles, à réviser."
+            
+            document["txt_appr"].text = appr
+
+        def relancer_jeu(ev):
+            global score, nb_questions
+            score = 0
+            nb_questions = 0
+            document["ecran_fin"].style.display = "none"
+            document["ecran_jeu"].style.display = "block"
+            charger_question()
+
+        def charger_question():
+            global current_good_answer, can_click, nb_questions
+            
+            # Vérification FIN DU JEU
+            if nb_questions >= MAX_QUESTIONS:
+                afficher_fin()
+                return
+
+            nb_questions += 1
+            can_click = True
+            document["feedback"].text = ""
+            document["progression"].text = f"Question {nb_questions} / {MAX_QUESTIONS} | Score : {score}"
+            
+            # Reset visuel
+            for btn in buttons:
+                btn.attrs["class"] = ""
+                btn.style.backgroundColor = ""
+
+            # Choix aléatoire
+            filename = random.choice(list(database.keys()))
+            data = database[filename]
+            mode = random.choice(["nom", "fonction"])
+            
+            if mode == "nom":
+                document["lbl_question"].text = "Quel est le NOM de ce composant ?"
+                document["lbl_question"].style.color = "#2980B9"
+                current_good_answer = data["nom"]
+                all_answers = [v["nom"] for v in database.values()]
+            else:
+                document["lbl_question"].text = "Quelle est la FONCTION de ce composant ?"
+                document["lbl_question"].style.color = "#E67E22"
+                current_good_answer = data["fonction"]
+                all_answers = [v["fonction"] for v in database.values()]
+
+            document["img_composant"].src = "img/" + filename 
+
+            # Mélange des réponses
+            choices = [current_good_answer]
+            leurres = [x for x in set(all_answers) if x != current_good_answer]
+            # Sécurité : si pas assez de leurres, on prend tout ce qu'on a
+            nb_leurres = min(3, len(leurres))
+            choices.extend(random.sample(leurres, nb_leurres))
+            random.shuffle(choices)
+
+            # Mise à jour texte boutons
+            for i, btn in enumerate(buttons):
+                if i < len(choices):
+                    btn.style.display = "inline-block" # Afficher bouton
+                    btn.text = choices[i]
+                else:
+                    btn.style.display = "none" # Cacher boutons inutiles (si < 4 choix)
+
+        def verifier(ev):
+            global score, can_click
+            if not can_click: return
+            can_click = False
+            
+            btn_clique = ev.target
+            reponse_choisie = btn_clique.text
+            
+            if reponse_choisie == current_good_answer:
+                # --- VRAI ---
+                btn_clique.attrs["class"] = "correct"
+                document["feedback"].text = "BRAVO !"
+                document["feedback"].style.color = "green"
+                score += 1
+                timer.set_timeout(charger_question, 1000)
+            else:
+                # --- FAUX ---
+                btn_clique.attrs["class"] = "wrong"
+                document["feedback"].text = f"Faux ! C'était : {current_good_answer}"
+                document["feedback"].style.color = "red"
+                
+                # Montrer la bonne réponse
+                for btn in buttons:
+                    if btn.text == current_good_answer:
+                        btn.attrs["class"] = "correct"
+                
+                timer.set_timeout(charger_question, 2000)
+
+        # Initialisation
+        for btn in buttons:
+            btn.bind("click", verifier)
+            
+        document["btn_rejouer"].bind("click", relancer_jeu)
+
+        charger_question()
+    </script>
+</body>
+</html>
