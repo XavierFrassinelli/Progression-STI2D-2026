@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Nouvel App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.11.0/brython.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/brython/3.11.0/brython_stdlib.min.js"></script>
+    
+    <style>
+        body { font-family: sans-serif; background-color: #ECF0F1; padding: 20px; text-align: center; }
+        .boite { background: white; max-width: 600px; margin: 0 auto; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input { padding: 10px; font-size: 1.1em; width: 60%; }
+        button { padding: 10px 20px; font-size: 1.1em; background: #E67E22; color: white; border: none; cursor: pointer; }
+        button:hover { background: #d35400; }
+        #resultat { margin-top: 20px; font-weight: bold; font-size: 1.2em; min-height: 1.5em; }
+    </style>
+</head>
+
+<body onload="brython()">
+
+    <div class="boite">
+        <h1>Titre de l'exercice</h1>
+        <p>Consigne : Entrez une valeur...</p>
+        
+        <input id="entree_eleve" placeholder="Tapez ici...">
+        <button id="btn_action">Valider</button>
+        
+        <div id="resultat"></div>
+    </div>
+
+    <script type="text/python">
+        from browser import document
+        
+        def ma_logique(ev):
+            # 1. Récupérer (Entrée)
+            valeur = document["entree_eleve"].value
+            
+            # 2. Traiter (Cerveau)
+            # Exemple : Si c'est vide, on râle
+            if not valeur:
+                reponse = "Il faut écrire quelque chose !"
+                couleur = "orange"
+            elif valeur == "42":
+                reponse = "Bravo, c'est la réponse universelle !"
+                couleur = "green"
+            else:
+                reponse = f"Vous avez écrit : {valeur}"
+                couleur = "#2C3E50"
+            
+            # 3. Afficher (Sortie)
+            document["resultat"].text = reponse
+            document["resultat"].style.color = couleur
+
+        # Liaison du bouton
+        document["btn_action"].bind("click", ma_logique)
+    </script>
+</body>
+</html>

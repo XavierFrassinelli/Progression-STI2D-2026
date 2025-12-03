@@ -1,3 +1,11 @@
+---
+password: Opeth25
+---
+
+# Page secrète
+Si vous voyez ce texte, c'est que le mot de passe a fonctionné !
+
+
 ## Robobrole
 
 Le travail en équipe, autour d'un projet commun, favorise l'entraide.  

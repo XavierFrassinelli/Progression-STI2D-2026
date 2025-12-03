@@ -1,3 +1,11 @@
+---
+password: Opeth25
+---
+
+# Page secrète
+Si vous voyez ce texte, c'est que le mot de passe a fonctionné !
+
+
 # Citations clés
 
 - Les technologies désignent l’ensemble des procédés, méthodes, instruments et outils permettant à l’Homme de créer des produits pour répondre à ses besoins.

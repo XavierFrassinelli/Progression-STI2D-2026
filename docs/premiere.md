@@ -1,3 +1,11 @@
+---
+password: Opeth25
+---
+
+# Page secrète
+Si vous voyez ce texte, c'est que le mot de passe a fonctionné !
+
+
 # Programme de première STI2D
 
 - <u>La progression pédagogique est structurée autour de quatre projets :</u>

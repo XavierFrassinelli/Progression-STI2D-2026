@@ -1,3 +1,11 @@
+---
+password: Opeth25
+---
+
+# Page secrète
+Si vous voyez ce texte, c'est que le mot de passe a fonctionné !
+
+
 # Le Programme STI2D : Une Formation Ambitieuse et Engagée
 
 Le programme **STI2D** (Sciences et Technologies de l'Industrie et du Développement Durable) se distingue par son ambition de former des élèves avec :

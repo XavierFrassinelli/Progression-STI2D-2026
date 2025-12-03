@@ -39,8 +39,11 @@ nav:
     - Mobilité: premiere_mobilite.md
     - Compétences: premiere_competence.md
     - Carte mentale: premiere_mind_map.md
+    - Chaîne de l'information: chaine_info.md
   - Terminale: Terminale.md
-  - Ressources: Ressources.md
+  - Ressources:
+    - Ressources: Ressources.md
+    - Apprendre: apprendre.md
 
 markdown_extensions:
   - markdown.extensions.abbr
@@ -58,4 +61,9 @@ markdown_extensions:
 
 extra_javascript:
   - js/firebase.js
+
+
+plugins:
+  - search
+  - encryptcontent
       
