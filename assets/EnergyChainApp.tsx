@@ -193,7 +193,7 @@ export default function EnergyChainApp() {
   // --- CONFIGURATION API KEY ---
   // Remplacez la chaîne vide ci-dessous par votre clé API si vous testez rapidement en local
   // Pour la production, utilisez les variables d'environnement (ex: process.env.REACT_APP_GEMINI_API_KEY ou import.meta.env.VITE_GEMINI_API_KEY)
-  const apiKey = ""; 
+  const apiKey = "AIzaSyDiyRuT1fro86kUMNKQhQ8EPxUYFYxjv-4"; 
 
   useEffect(() => {
     handleReset();
@@ -325,68 +325,7 @@ export default function EnergyChainApp() {
   return (
     <div className="min-h-screen bg-slate-50 p-2 md:p-6 font-sans text-slate-800 flex flex-col relative">
       
-      {/* --- MODALE GÉNÉRATEUR IA --- */}
-      {isGeneratorOpen && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fadeIn">
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white flex justify-between items-start">
-              <div>
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Sparkles className="fill-yellow-300 text-yellow-300 animate-pulse" />
-                  Générateur de Scénario IA
-                </h2>
-                <p className="text-indigo-100 text-sm mt-1">Créez un exercice sur mesure.</p>
-              </div>
-              <button onClick={() => setIsGeneratorOpen(false)} className="text-white/80 hover:text-white transition-colors">
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Quel système technique voulez-vous étudier ?
-                </label>
-                <input 
-                  type="text" 
-                  value={generatorPrompt}
-                  onChange={(e) => setGeneratorPrompt(e.target.value)}
-                  placeholder="Ex: Une voiture électrique, Un grille-pain, Un drone..."
-                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all"
-                  onKeyDown={(e) => e.key === 'Enter' && generateScenario()}
-                />
-              </div>
-
-              {generationError && (
-                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 flex items-center gap-2">
-                  <span className="font-bold">Erreur:</span> {generationError}
-                </div>
-              )}
-
-              <button 
-                onClick={generateScenario}
-                disabled={isGenerating || !generatorPrompt.trim()}
-                className={`
-                  w-full py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-all
-                  ${isGenerating 
-                    ? 'bg-slate-400 cursor-wait' 
-                    : 'bg-purple-600 hover:bg-purple-700 hover:scale-[1.02]'}
-                `}
-              >
-                {isGenerating ? (
-                  <><Loader className="animate-spin" /> Génération en cours...</>
-                ) : (
-                  <><Sparkles size={20} /> Générer avec l'IA</>
-                )}
-              </button>
-              
-              <p className="text-xs text-slate-400 text-center mt-2">
-                Utilise Gemini 2.5 Flash pour créer des scénarios pédagogiques uniques.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       <div className="max-w-6xl mx-auto w-full space-y-4 md:space-y-6 flex-grow">
         
@@ -706,6 +645,68 @@ export default function EnergyChainApp() {
         </div>
 
       </div>
+      {/* --- MODALE GÉNÉRATEUR IA --- */}
+      {isGeneratorOpen && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fadeIn">
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white flex justify-between items-start">
+              <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Sparkles className="fill-yellow-300 text-yellow-300 animate-pulse" />
+                  Générateur de Scénario IA
+                </h2>
+                <p className="text-indigo-100 text-sm mt-1">Créez un exercice sur mesure.</p>
+              </div>
+              <button onClick={() => setIsGeneratorOpen(false)} className="text-white/80 hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Quel système technique voulez-vous étudier ?
+                </label>
+                <input 
+                  type="text" 
+                  value={generatorPrompt}
+                  onChange={(e) => setGeneratorPrompt(e.target.value)}
+                  placeholder="Ex: Une voiture électrique, Un grille-pain, Un drone..."
+                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all"
+                  onKeyDown={(e) => e.key === 'Enter' && generateScenario()}
+                />
+              </div>
+
+              {generationError && (
+                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 flex items-center gap-2">
+                  <span className="font-bold">Erreur:</span> {generationError}
+                </div>
+              )}
+
+              <button 
+                onClick={generateScenario}
+                disabled={isGenerating || !generatorPrompt.trim()}
+                className={`
+                  w-full py-3 rounded-xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-all
+                  ${isGenerating 
+                    ? 'bg-slate-400 cursor-wait' 
+                    : 'bg-purple-600 hover:bg-purple-700 hover:scale-[1.02]'}
+                `}
+              >
+                {isGenerating ? (
+                  <><Loader className="animate-spin" /> Génération en cours...</>
+                ) : (
+                  <><Sparkles size={20} /> Générer avec l'IA</>
+                )}
+              </button>
+              
+              <p className="text-xs text-slate-400 text-center mt-2">
+                Utilise Gemini 2.5 Flash pour créer des scénarios pédagogiques uniques.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
