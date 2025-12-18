@@ -183,6 +183,11 @@ export default function EnergyChainApp() {
 
   const [currentItems, setCurrentItems] = useState<ComponentItem[]>([]);
 
+  // Scroll to top when scenario changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [scenarioIndex]);
+
   const currentScenario = scenarios[scenarioIndex];
   
   // --- CONFIGURATION API KEY ---
