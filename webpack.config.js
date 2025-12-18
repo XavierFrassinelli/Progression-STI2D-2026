@@ -4,9 +4,14 @@ export default {
   mode: 'production',
   entry: './docs/assets/EnergyChainApp.tsx',
   output: {
-    path: path.resolve('./dist'),
-    filename: 'bundle.js',
-    clean: true
+    // CORRECTION ICI : On enlève __dirname et on met le chemin relatif
+    path: path.resolve('./docs/assets'), 
+    
+    // Le nom attendu par votre site
+    filename: 'bundle.energychain.js',
+    
+    // IMPORTANT : clean: false pour ne pas effacer vos images !
+    clean: false 
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx']
@@ -22,7 +27,7 @@ export default {
             presets: [
               ['@babel/preset-env', { targets: { node: 'current' } }],
               ['@babel/preset-react', { runtime: 'automatic' }],
-              '@babel/preset-typescript'
+              ['@babel/preset-typescript']
             ]
           }
         }
