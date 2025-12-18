@@ -5,6 +5,7 @@ theme:
   name: material
   features:
     - content.code.copy
+    - toc.integrate
   language: fr
   font:
     text: Raleway
@@ -39,7 +40,11 @@ nav:
     - Mobilité: premiere_mobilite.md
     - Compétences: premiere_competence.md
     - Carte mentale: premiere_mind_map.md
-    - Chaîne de l'information: chaine_info.md
+    - Chaîne de l'information:
+        - Introduction: chaine_info/index.md
+        - Quiz STI2D: chaine_info/quiz.md
+        - Simulation GeoGebra: chaine_info/geogebra.md
+        - Exercice Chaîne d'Information & d'Énergie: chaine_info/app.md
   - Terminale: Terminale.md
   - Ressources:
     - Ressources: Ressources.md

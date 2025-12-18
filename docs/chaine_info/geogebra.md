@@ -1,5 +1,8 @@
-<iframe src="../assets/quiz_sti2d.html" width="100%" height="720px"></iframe>
+---
+toc: false
+---
 
+# Simulation Convertisseur analogique/ numérique GeoGebra
 
 <iframe 
     src="https://www.geogebra.org/material/iframe/id/chmhbhkg/width/800/height/500/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/true/rc/false/ld/false/sdz/false/ctl/false" 
