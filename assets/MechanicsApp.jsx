@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { 
   ArrowRight, CheckCircle, RotateCcw, Sparkles, X, Loader2, 
@@ -80,52 +80,42 @@ const SmartInput = ({ value, onChange, placeholder, status, label, disabled, sol
   );
 };
 
-// --- MODALE IA ---
+// --- MODALE IA (VERSION STABLE - GEMINI PRO) ---
 const GeneratorModal = ({ onClose, onGenerate }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const apiKey = ""; // La clé est injectée par l'environnement si dispo
+
+  // Ta clé API
+  const apiKey = "AIzaSyDwDwLI9mt63UuBitMbcmyzI8dJe87QR2Y"; 
 
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
 
     const systemPrompt = `
-      Tu es un professeur de mécanique. 
-      Tâche : Génère un exercice de statique plane (2D) sur un système technique CONCRET et ALÉATOIRE.
-      Choisis toi-même le sujet (Grue, Poutre, Échelle, Pédale, etc.).
+      Tu es un professeur de mécanique statique.
+      Génère un exercice de statique plane (2D) unique sur un système concret.
       
-      IMPORTANT :
-      1. Adresse-toi DIRECTEMENT au lecteur ("Calculez...", "Déterminez...").
-      2. Fournis des points d'application (x, y) pour les moments.
+      Règles strictes :
+      1. JSON uniquement.
+      2. Deux forces (F1, F2).
+      3. Coordonnées x,y cohérentes.
+      4. Angles en degrés.
       
-      Structure JSON :
+      Structure JSON attendue :
       {
         "title": "Titre",
-        "context": "Énoncé court.",
+        "context": "Contexte.",
         "forces": [
-          { "id": "F1", "name": "Force 1", "magnitude": 1000, "angle": 270, "x": 5.0, "y": 0 },
-          { "id": "F2", "name": "Force 2", "magnitude": 2500, "angle": 30, "x": 2.0, "y": 1.5 }
+          { "id": "F1", "name": "F1", "magnitude": 1500, "angle": 270, "x": 5, "y": 0 },
+          { "id": "F2", "name": "F2", "magnitude": 2500, "angle": 45, "x": 2, "y": 3 }
         ]
       }
     `;
 
     try {
-      // Simuler une réponse si pas de clé (pour démo)
-      if (!apiKey) {
-         await new Promise(r => setTimeout(r, 1000));
-         onGenerate({
-            title: "Pont-levis (Démo)",
-            context: "Un pont-levis est maintenu par un câble. Calculez la tension nécessaire.",
-            forces: [
-              { id: "F1", name: "Poids Tablier", magnitude: 5000, angle: 270, x: 4, y: 0 },
-              { id: "F2", name: "Tension Câble", magnitude: 3000, angle: 150, x: 8, y: 2 }
-            ]
-         });
-         onClose();
-         return;
-      }
-
+      // --- CORRECTION : ON UTILISE LE MODÈLE 'gemini-pro' ---
+      // C'est le modèle le plus compatible actuellement.
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
         {
@@ -138,15 +128,23 @@ const GeneratorModal = ({ onClose, onGenerate }) => {
         }
       );
       
-      if (!response.ok) throw new Error("Erreur API");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `Erreur ${response.status}`);
+      }
 
       const data = await response.json();
-      const json = JSON.parse(data.candidates[0].content.parts[0].text);
+      
+      let rawText = data.candidates[0].content.parts[0].text;
+      rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+      
+      const json = JSON.parse(rawText);
       onGenerate(json);
       onClose();
+
     } catch (e) {
       console.error(e);
-      setError("Erreur : " + e.message);
+      setError("Erreur IA : " + e.message);
     } finally {
       setLoading(false);
     }
@@ -157,18 +155,18 @@ const GeneratorModal = ({ onClose, onGenerate }) => {
       <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full text-center">
         <div className="flex justify-between items-center mb-6">
           <h2 className="font-bold text-lg flex items-center gap-2 mx-auto pl-8">
-            <Dice5 className="text-purple-600"/> Exercice Aléatoire
+            <Dice5 className="text-purple-600"/> Générateur IA
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
         </div>
         <div className="mb-6 text-slate-600 text-sm">
-          L'IA va inventer un nouveau problème de mécanique sur un système surprise.
+          Tentative avec le modèle standard Gemini Pro...
         </div>
-        {error && <div className="mb-4 p-2 bg-red-50 text-red-600 text-xs rounded border border-red-100">{error}</div>}
+        {error && <div className="mb-4 p-2 bg-red-50 text-red-600 text-xs rounded border border-red-100 text-left max-h-32 overflow-auto">{error}</div>}
         <button 
           onClick={handleGenerate} 
           disabled={loading}
-          className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:shadow-lg transition-all transform hover:scale-[1.02]"
+          className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all"
         >
           {loading ? <><Loader2 className="animate-spin"/> Création...</> : <><Sparkles size={18}/> Générer</>}
         </button>
@@ -265,6 +263,23 @@ const MechanicsApp = () => {
     setValidation({ results, allCorrect, targetRx, targetRy, targetRMag, targetRMoment });
   };
 
+  // --- CALCUL DU FACTEUR D'ÉCHELLE (Fit Screen) ---
+  const vectorScale = useMemo(() => {
+    if (!problem.forces.length) return 1;
+
+    // 1. Trouver la force la plus grande
+    const maxMag = Math.max(...problem.forces.map(f => f.magnitude));
+
+    // 2. Définir la taille visuelle cible (dans ton viewBox -5 à 5)
+    const targetSize = 3.5; 
+
+    // 3. Sécurité pour les petites forces
+    const referenceMax = Math.max(maxMag, 200); 
+
+    // 4. Retourner le ratio
+    return targetSize / referenceMax;
+  }, [problem.forces]);
+
   return (
     <div className="bg-slate-50 p-4 font-sans text-slate-800 min-h-[600px] rounded-lg">
       
@@ -284,9 +299,9 @@ const MechanicsApp = () => {
             <button onClick={() => { setInputs({}); setValidation(null); setShowSolution(false); }} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><RotateCcw size={20}/></button>
             <button 
               onClick={() => setShowGenerator(true)} 
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold flex items-center gap-2 hover:bg-purple-700 transition shadow-md hover:shadow-lg"
+              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold flex items-center gap-2 hover:shadow-lg transition transform hover:scale-105"
             >
-              <Sparkles size={16}/> Exercice Aléatoire
+              <Sparkles size={16}/> Nouvel Exercice
             </button>
           </div>
         </header>
@@ -403,8 +418,11 @@ const MechanicsApp = () => {
                    <g transform="scale(1, -1)">
                      {problem.forces.map((f) => {
                        const rad = toRad(f.angle);
-                       const dx = (f.magnitude / 200) * 1.5 * Math.cos(rad);
-                       const dy = (f.magnitude / 200) * 1.5 * Math.sin(rad);
+                       // --- APPLIQUER L'ÉCHELLE ---
+                       const visualLength = f.magnitude * vectorScale;
+                       const dx = visualLength * Math.cos(rad);
+                       const dy = visualLength * Math.sin(rad);
+                       // ---------------------------
                        const ox = level === 3 ? (f.x || 0) : 0;
                        const oy = level === 3 ? (f.y || 0) : 0;
                        return (
@@ -434,7 +452,7 @@ const MechanicsApp = () => {
   );
 };
 
-// --- MONTAGE (Indispensable pour l'affichage) ---
+// --- MONTAGE ---
 const container = document.getElementById('mechanics-root');
 if (container) {
   const root = createRoot(container);
