@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "node sauvegarde.js",
-    "build": "webpack --config webpack.config.js",
+    "build": "webpack --config webpack.config.cjs",
     "start": "webpack serve --open"
   },
   "repository": {
@@ -31,6 +31,7 @@
   "dependencies": {
     "firebase": "^11.6.1",
     "lucide-react": "^0.562.0",
+    "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
