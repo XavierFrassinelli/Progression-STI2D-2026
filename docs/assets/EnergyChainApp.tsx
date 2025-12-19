@@ -193,7 +193,7 @@ export default function EnergyChainApp() {
   // --- CONFIGURATION API KEY ---
   // Remplacez la chaîne vide ci-dessous par votre clé API si vous testez rapidement en local
   // Pour la production, utilisez les variables d'environnement (ex: process.env.REACT_APP_GEMINI_API_KEY ou import.meta.env.VITE_GEMINI_API_KEY)
-  const apiKey = "AIzaSyDiyRuT1fro86kUMNKQhQ8EPxUYFYxjv-4"; 
+  const apiKey = "AIzaSyDwDwLI9mt63UuBitMbcmyzI8dJe87QR2Y"; 
 
   useEffect(() => {
     handleReset();
