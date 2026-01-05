@@ -1066,10 +1066,21 @@
 <hr />
 <h2 id="application-le-frein-a-disque-couple-de-freinage">Application : Le Frein à Disque (Couple de Freinage)</h2>
 <p>Pour arrêter le véhicule, nous devons créer un <strong>Couple de Freinage</strong> (<span class="arithmatex">\(C_f\)</span>) qui s'oppose à la rotation de la roue. Cette simulation illustre l'exercice de la page 4.</p>
-<p><strong>Paramètres clés :</strong>
-* <strong>Force de Serrage (<span class="arithmatex">\(F_N\)</span>) :</strong> L'effort hydraulique des pistons sur les plaquettes.
-* <strong>Coefficient (<span class="arithmatex">\(\mu\)</span>) :</strong> Dépend de la qualité des plaquettes (cf. TD : <span class="arithmatex">\(\mu=0.8\)</span>).
-* <strong>Rayon (<span class="arithmatex">\(r\)</span>) :</strong> La distance entre l'axe de la roue et l'étrier.</p>
+<p><strong>Paramètres clés :</strong></p>
+<ul>
+<li>
+<p>Force de Serrage (<span class="arithmatex">\(F_N\)</span>) :</p>
+</li>
+<li>
+<p>L'effort hydraulique des pistons sur les plaquettes.</p>
+</li>
+<li>
+<p>Coefficient (<span class="arithmatex">\(\mu\)</span>) : Dépend de la qualité des plaquettes (cf. TD : <span class="arithmatex">\(\mu=0.8\)</span>).</p>
+</li>
+<li>
+<p><strong>Rayon (<span class="arithmatex">\(r\)</span>) :</strong> La distance entre l'axe de la roue et l'étrier.</p>
+</li>
+</ul>
 <iframe 
     src="../../assets/frein.html" 
     width="100%" 
@@ -1079,10 +1090,16 @@
 ></iframe>
 
 <h3 id="analyse-mecanique">Analyse Mécanique</h3>
-<p>Le freinage est une transformation d'effort :
-1.  On serre le disque : <strong><span class="arithmatex">\(F_N\)</span></strong> (Force Normale).
-2.  Le frottement crée une force tangentielle : <strong><span class="arithmatex">\(F_f = \mu \cdot F_N\)</span></strong> (multiplié par 2 car il y a 2 plaquettes !).
-3.  Cette force crée un couple (moment) par rapport au centre : <strong><span class="arithmatex">\(C_f = F_f \cdot r\)</span></strong>.</p>
+<p>Le freinage est une transformation d'effort :</p>
+<ol>
+<li>
+<p>On serre le disque : <strong><span class="arithmatex">\(F_N\)</span></strong> (Force Normale).</p>
+</li>
+<li>
+<p>Le frottement crée une force tangentielle : <strong><span class="arithmatex">\(F_f = \mu \cdot F_N\)</span></strong> (multiplié par 2 car il y a 2 plaquettes !).</p>
+</li>
+<li>Cette force crée un couple (moment) par rapport au centre : <strong><span class="arithmatex">\(C_f = F_f \cdot r\)</span></strong>.</li>
+</ol>
 <blockquote>
 <p><strong>Note :</strong> On voit clairement ici que pour augmenter le freinage, on peut soit appuyer plus fort (<span class="arithmatex">\(F_N\)</span>), soit augmenter la taille du disque (<span class="arithmatex">\(r\)</span>).</p>
 </blockquote>
