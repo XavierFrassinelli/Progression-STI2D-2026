@@ -690,6 +690,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#attention-le-piege-de-la-masse" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attention « Le piège de la masse »
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1051,7 +1060,7 @@
 
 
 <h1 id="etude-du-frottement-le-convoyeur">Étude du frottement : Le Convoyeur</h1>
-<p>Voici une simulation interactive pour comprendre l'influence de l'angle et du matériau sur l'adhérence.</p>
+<p>Voici une simulation interactive pour comprendre l'influence de l'angle sur l'adhérence.</p>
 <iframe 
     src="../../assets/convoyeur.html" 
     width="100%" 
@@ -1061,10 +1070,22 @@
 ></iframe>
 
 <h2 id="analyse">Analyse</h2>
-<p>Comme vu dans le TD, lorsque l'angle α augmente :
-1. La composante tangentielle du poids (qui tire vers le bas) augmente.
-2. La composante normale (qui plaque l'objet) diminue.</p>
+<p>Comme vu dans le TD, lorsque l'angle α augmente :</p>
+<ol>
+<li>La composante tangentielle du poids (qui tire vers le bas) augmente.</li>
+<li>La composante normale (qui plaque l'objet) diminue.</li>
+</ol>
 <p>Le décrochage se produit lorsque la tangente sort du cône de frottement défini par le coefficient μ.</p>
+<h2 id="attention-le-piege-de-la-masse"><strong>Attention « Le piège de la masse »</strong></h2>
+<p>Avez-vous remarqué ? Si vous changez la masse, la boîte ne se met pas à glisser davantage.</p>
+<p><strong>Pourquoi ?</strong>
+Si on double la masse, le Poids double.</p>
+<ul>
+<li>La force qui tire vers le bas (<span class="arithmatex">\(F_T\)</span>) double.</li>
+<li>MAIS la force qui plaque au sol (<span class="arithmatex">\(F_N\)</span>) double aussi, ce qui double l'adhérence disponible.</li>
+</ul>
+<p>Les deux effets s'annulent. L'angle de glissement limite
+ne dépend <strong>que</strong> des matériaux (<span class="arithmatex">\(\mu\)</span>), pas de la masse.</p>
 <hr />
 
 
