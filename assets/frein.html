@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur Frein à Disque</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; display: flex; flex-direction: column; align-items: center; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 800px; margin-top: 20px; }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        canvas { border: 1px solid #ddd; background: #fff; width: 100%; height: 450px; display: block; margin-bottom: 20px; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #eee; padding: 15px; border-radius: 5px; }
+        .control-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; font-size: 0.9em; margin-bottom: 5px; }
+        input[type=range] { width: 100%; cursor: pointer; }
+        .values { display: flex; justify-content: space-between; font-size: 0.85em; color: #555; }
+        
+        /* Imitation du style LaTeX */
+        .latex-style { font-family: 'Times New Roman', Times, serif; font-style: italic; font-size: 1.15em; }
+        .value-display { font-family: 'Segoe UI', sans-serif; font-style: normal; font-weight: bold; color: #2196f3; }
+        
+        .info-panel { margin-top: 15px; padding: 15px; background: #e3f2fd; border-left: 4px solid #2196f3; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .result-box { background: white; padding: 10px; border-radius: 4px; border: 1px solid #bbdefb; }
+        .legend { font-size: 0.8em; margin-top: 5px; display: flex; gap: 15px; justify-content: center; }
+        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Le Frein à Disque : Force & Couple</h2>
+    
+    <canvas id="simCanvas" width="800" height="450"></canvas>
+    
+    <div class="legend">
+        <span><span class="dot" style="background:orange"></span>Force de Serrage (Fn)</span>
+        <span><span class="dot" style="background:red"></span>Force de Frottement (Ff)</span>
+        <span><span class="dot" style="background:gray"></span>Rayon (r)</span>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Force de serrage (<span class="latex-style">F<sub>N</sub></span>) par plaquette</label>
+            <input type="range" id="fnRange" min="0" max="500" value="200" step="10">
+            <div class="values"><span id="fnVal">200 N</span></div>
+        </div>
+
+        <div class="control-group">
+            <label>Coefficient de frottement (<span class="latex-style">μ</span>)</label>
+            <input type="range" id="muRange" min="0.1" max="1.2" value="0.8" step="0.1">
+            <div class="values"><span id="muVal">0.8</span></div>
+        </div>
+
+        <div class="control-group">
+            <label>Position de l'étrier (Rayon <span class="latex-style">r</span>)</label>
+            <input type="range" id="rRange" min="50" max="180" value="140" step="5">
+            <div class="values"><span id="rVal">140 mm</span></div>
+        </div>
+
+        <div class="control-group" style="justify-content:center;">
+             <label style="display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" id="spinCheck" checked style="width:auto;">
+                Animer la rotation
+             </label>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div class="result-box">
+            <div><strong>Force Tangentielle (Totale)</strong></div>
+            <div style="font-size:0.9em; color:#666;">2 plaquettes × μ × F<sub>N</sub></div>
+            <div style="font-size:1.2em; margin-top:5px;">
+                <span class="latex-style">F<sub>f</sub></span> = <span id="resFf" class="value-display">--</span>
+            </div>
+        </div>
+        <div class="result-box">
+            <div><strong>Couple de Freinage</strong></div>
+            <div style="font-size:0.9em; color:#666;">Force × Rayon (r)</div>
+            <div style="font-size:1.2em; margin-top:5px;">
+                <span class="latex-style">C<sub>f</sub></span> = <span id="resCf" class="value-display">--</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Inputs
+    const fnInput = document.getElementById('fnRange');
+    const muInput = document.getElementById('muRange');
+    const rInput = document.getElementById('rRange');
+    const spinCheck = document.getElementById('spinCheck');
+    
+    // Displays
+    const fnDisplay = document.getElementById('fnVal');
+    const muDisplay = document.getElementById('muVal');
+    const rDisplay = document.getElementById('rVal');
+    const resFf = document.getElementById('resFf');
+    const resCf = document.getElementById('resCf');
+
+    let angleRotation = 0;
+
+    // State
+    let state = {
+        fn: 200,
+        mu: 0.8,
+        r: 140, // mm
+        isSpinning: true
+    };
+
+    function update() {
+        state.fn = parseFloat(fnInput.value);
+        state.mu = parseFloat(muInput.value);
+        state.r = parseFloat(rInput.value);
+        state.isSpinning = spinCheck.checked;
+
+        // Affichage Textes
+        fnDisplay.textContent = state.fn + " N";
+        muDisplay.textContent = state.mu.toFixed(1);
+        rDisplay.textContent = state.r + " mm";
+
+        // CALCULS
+        // Attention : Le TD ne précise pas toujours, mais un étrier pince le disque.
+        // Il y a donc 2 surfaces de frottement. Ff_total = 2 * mu * Fn
+        const Ff_total = 2 * state.mu * state.fn;
+        
+        // Couple = Force * Rayon (convertir r en mètres pour le résultat en N.m)
+        const Torque = Ff_total * (state.r / 1000);
+
+        resFf.textContent = Ff_total.toFixed(0) + " N";
+        resCf.textContent = Torque.toFixed(1) + " N·m";
+    }
+
+    function drawArrow(ctx, fromX, fromY, toX, toY, color, label) {
+        const headlen = 10;
+        const dx = toX - fromX;
+        const dy = toY - fromY;
+        const angle = Math.atan2(dy, dx);
+        
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 3;
+        
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.fill();
+
+        if(label) {
+            ctx.font = "bold 14px Arial";
+            ctx.fillStyle = color;
+            ctx.fillText(label, toX + 10, toY);
+        }
+    }
+
+    function loop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // Animation Rotation
+        if(state.isSpinning) {
+            angleRotation += 0.05; // Vitesse constante pour visualisation
+        }
+
+        // --- DESSIN DISQUE ---
+        ctx.save();
+        ctx.translate(cx, cy);
+        
+        // Disque Gris
+        ctx.beginPath();
+        ctx.arc(0, 0, 200, 0, 2 * Math.PI); // Rayon visuel fixe 200px
+        ctx.fillStyle = "#e0e0e0";
+        ctx.fill();
+        ctx.strokeStyle = "#999";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Trous de ventilation (pour voir ça tourner)
+        ctx.save();
+        ctx.rotate(angleRotation);
+        ctx.fillStyle = "#fff";
+        for(let i=0; i<6; i++) {
+            ctx.beginPath();
+            ctx.arc(120, 0, 15, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            ctx.rotate(Math.PI / 3);
+        }
+        ctx.restore();
+
+        // Axe central
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, 2 * Math.PI);
+        ctx.fillStyle = "#555";
+        ctx.fill();
+
+        // --- DESSIN ÉTRIER ---
+        // L'étrier est positionné selon le rayon r choisi par l'utilisateur
+        // Echelle visuelle : Disque max = 200px. Rayon max slider = 180mm. 
+        // 1mm = 1px (simplification visuelle directe)
+        const posR = state.r; 
+        
+        // Dessin Plaquette (Carré statique à droite)
+        ctx.fillStyle = "rgba(50, 50, 200, 0.3)";
+        ctx.strokeStyle = "blue";
+        ctx.lineWidth = 2;
+        // Positionné à droite (angle 0)
+        ctx.fillRect(posR - 20, -30, 40, 60);
+        ctx.strokeRect(posR - 20, -30, 40, 60);
+
+        // --- VECTEURS ---
+        
+        // 1. Force de Serrage (Fn)
+        // On la représente perpendiculaire au disque (vue de face c'est dur),
+        // On va tricher : on la dessine comme une pression venant de l'extérieur vers le disque.
+        // Echelle : 1 Newton = 0.2 px
+        const lenFn = state.fn * 0.2;
+        if(state.fn > 0) {
+            // Flèche qui appuie sur la plaquette
+            // Départ : extérieur, Arrivée : centre plaquette
+            drawArrow(ctx, posR + 40 + lenFn, 0, posR + 25, 0, "orange", "Fn");
+            
+            // Symbole 'X' pour dire "ça rentre" ? Non, restons simple.
+        }
+
+        // 2. Force de Frottement (Ff)
+        // Tangente au mouvement. Le disque tourne (visuellement horaire dans le repère standard canvas ? non, on a rotate +)
+        // Si rotation horaire (angle augmente), vitesse tangentielle est vers le bas (à droite).
+        // Donc Frottement est vers le HAUT.
+        const totalFf = 2 * state.mu * state.fn;
+        const lenFf = totalFf * 0.2; // Même échelle
+        
+        if(lenFf > 0) {
+            // Point d'application : centre plaquette (posR, 0)
+            // Vers le haut (y négatif)
+            drawArrow(ctx, posR, 0, posR, -lenFf, "red", "Ff");
+        }
+
+        // 3. Annotation Rayon
+        ctx.beginPath();
+        ctx.moveTo(0, 50); // Décalé vers le bas
+        ctx.lineTo(posR, 50);
+        ctx.strokeStyle = "#555";
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // Petit trait fin
+        ctx.beginPath();
+        ctx.moveTo(posR, 45);
+        ctx.lineTo(posR, 55);
+        ctx.stroke();
+        ctx.fillStyle = "#555";
+        ctx.font = "italic 12px Arial";
+        ctx.fillText("r", posR/2, 45);
+
+        ctx.restore();
+
+        requestAnimationFrame(loop);
+    }
+
+    // Listeners
+    fnInput.addEventListener('input', update);
+    muInput.addEventListener('input', update);
+    rInput.addEventListener('input', update);
+    spinCheck.addEventListener('change', update);
+
+    update();
+    loop();
+</script>
+
+</body>
+</html>

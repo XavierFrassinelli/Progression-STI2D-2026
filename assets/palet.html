@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur Palet - Cône de Frottement</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background-color: #f5f5f5; display: flex; flex-direction: column; align-items: center; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 90%; max-width: 800px; margin-top: 20px; }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        canvas { border: 1px solid #ddd; background: #fff; width: 100%; height: 450px; display: block; margin-bottom: 20px; cursor: crosshair; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #eee; padding: 15px; border-radius: 5px; }
+        .control-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; font-size: 0.9em; margin-bottom: 5px; }
+        select, input { padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+        .info-panel { margin-top: 15px; padding: 10px; background: #e3f2fd; border-left: 4px solid #2196f3; font-size: 0.9em; }
+        .status { text-align: center; font-weight: bold; padding: 10px; margin-top: 10px; border-radius: 4px; transition: all 0.2s; }
+        .status.static { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.sliding { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .math-display { font-family: 'Courier New', monospace; font-weight: bold; }
+        /* Imitation du style LaTeX */
+        .latex-style { 
+            font-family: 'Times New Roman', Times, serif; 
+            font-style: italic; 
+            font-size: 1.1em;
+        }
+        /* Les chiffres et unités ne doivent pas être en italique, sauf dans les formules */
+        .value-display {
+            font-family: 'Segoe UI', sans-serif;
+            font-style: normal;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Le Palet : Cône de Frottement</h2>
+    <p style="text-align:center; color:#666; font-size:0.9em;">Vue de dessus. Cliquez et glissez la souris pour appliquer une force de poussée.</p>
+    
+    <canvas id="simCanvas" width="800" height="450"></canvas>
+
+    <div id="statusBox" class="status static">EN ATTENTE</div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label for="materialSelect">Couple de matériaux (TD Page 3)</label>
+            <select id="materialSelect">
+                <option value="0.37">Plastique 1 / Roche (µ=0.37)</option>
+                <option value="0.22">Plastique 2 / Roche (µ=0.22)</option>
+                <option value="0.56">Plastique 3 / Roche (µ=0.56)</option>
+                <option value="0.26">Plastique 1 / Carton (µ=0.26)</option>
+                <option value="0.58">Plastique 2 / Carton (µ=0.58)</option>
+                <option value="0.14">Plastique 3 / Carton (µ=0.14)</option>
+                <option value="0.7">Gomme / Route sèche (µ=0.7)</option>
+                <option value="0.4">Gomme / Route mouillée (µ=0.4)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="fnRange">Effort Normal (Poids du palet)</label>
+            <input type="range" id="fnRange" min="1" max="10" value="2.1" step="0.1">
+            <span id="fnDisplay" style="font-size:0.85em; color:#555; margin-top:5px;">Fn = 2.1 N</span>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div><strong>Calculs en temps réel :</strong></div>
+        <div style="margin-top:5px;">
+            Angle du cône : 
+            <span class="latex-style">φ</span> = arctan(<span class="latex-style">μ</span>) = 
+            <span id="angleDisplay" class="value-display">--</span>
+        </div>
+        <div>
+            Limite d'adhérence : 
+            <span class="latex-style">F<sub>lim</sub></span> = <span class="latex-style">μ</span> · <span class="latex-style">F<sub>N</sub></span> = 
+            <span id="limitDisplay" class="value-display">--</span>
+        </div>
+        <div>
+            Force appliquée : 
+            <span class="latex-style">F<sub>app</sub></span> = 
+            <span id="forceDisplay" class="value-display">0 N</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Elements DOM
+    const materialSelect = document.getElementById('materialSelect');
+    const fnRange = document.getElementById('fnRange');
+    const fnDisplay = document.getElementById('fnDisplay');
+    const angleDisplay = document.getElementById('angleDisplay');
+    const limitDisplay = document.getElementById('limitDisplay');
+    const forceDisplay = document.getElementById('forceDisplay');
+    const statusBox = document.getElementById('statusBox');
+
+    // État de la simulation
+    let state = {
+        mu: 0.37,
+        Fn: 2.1,
+        mouseX: 0,
+        mouseY: 0,
+        isDragging: false
+    };
+
+    // Facteur d'échelle : 1 Newton = X pixels
+    const SCALE = 50;
+    const CENTER_X = canvas.width / 2;
+    const CENTER_Y = canvas.height / 2;
+
+    // Mise à jour des valeurs
+    function updateValues() {
+        state.mu = parseFloat(materialSelect.value);
+        state.Fn = parseFloat(fnRange.value);
+        
+        // Affichage Fn
+        fnDisplay.textContent = `Fn = ${state.Fn.toFixed(1)} N`;
+
+        // Calcul Angle Phi (en degrés)
+        const phiRad = Math.atan(state.mu);
+        const phiDeg = (phiRad * 180 / Math.PI).toFixed(1);
+        // On affiche simplement la valeur numérique
+        angleDisplay.textContent = `${phiDeg}°`;
+
+        // Calcul Limite
+        const fLim = state.mu * state.Fn;
+        limitDisplay.textContent = `${fLim.toFixed(2)} N`;
+
+        draw();
+    }
+
+    // Gestion de la souris
+    canvas.addEventListener('mousedown', (e) => {
+        state.isDragging = true;
+        updateMousePos(e);
+    });
+    
+    window.addEventListener('mousemove', (e) => {
+        if(state.isDragging) {
+            updateMousePos(e);
+            draw();
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        state.isDragging = false;
+        draw();
+    });
+
+    function updateMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        state.mouseX = e.clientX - rect.left;
+        state.mouseY = e.clientY - rect.top;
+    }
+
+    // Fonction de dessin
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Calculs Vecteurs
+        const dx = state.mouseX - CENTER_X;
+        const dy = state.mouseY - CENTER_Y;
+        const distPixels = Math.sqrt(dx*dx + dy*dy);
+        
+        // Force appliquée (convertie en Newtons)
+        const forceApplied = distPixels / SCALE;
+        const fLim = state.mu * state.Fn;
+        const limitRadiusPixels = fLim * SCALE;
+
+        // Mise à jour textes
+        forceDisplay.textContent = `${forceApplied.toFixed(2)} N`;
+
+        // Détection glissement
+        let isSliding = forceApplied > fLim;
+        if (distPixels < 5) {
+            statusBox.textContent = "AUCUNE FORCE APPLIQUÉE";
+            statusBox.className = "status static";
+        } else if (isSliding) {
+            statusBox.textContent = "GLISSEMENT ! La force sort du cône (cercle limite).";
+            statusBox.className = "status sliding";
+        } else {
+            statusBox.textContent = "ADHÉRENCE. Le palet résiste.";
+            statusBox.className = "status static";
+        }
+
+        // --- DESSIN ---
+
+        // 2. Zone Limite (Cercle de frottement)
+        ctx.beginPath();
+        ctx.arc(CENTER_X, CENTER_Y, limitRadiusPixels, 0, 2 * Math.PI);
+        ctx.fillStyle = "rgba(255, 0, 0, 0.1)";
+        ctx.fill();
+        ctx.strokeStyle = "red";
+        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset dash
+
+        // Label sur le cercle limite
+        ctx.fillStyle = "red";
+        ctx.font = "12px Arial";
+        ctx.fillText(`Limite: ${fLim.toFixed(2)} N`, CENTER_X + limitRadiusPixels + 5, CENTER_Y);
+
+        // 3. Le Palet (Centre)
+        ctx.beginPath();
+        ctx.arc(CENTER_X, CENTER_Y, 20, 0, 2 * Math.PI);
+        ctx.fillStyle = "#333";
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "10px Arial";
+        ctx.fillText("PALET", CENTER_X - 15, CENTER_Y + 4);
+
+        // 4. Vecteur Force (Si on tire)
+        if (distPixels > 5) {
+            drawArrow(ctx, CENTER_X, CENTER_Y, state.mouseX, state.mouseY, isSliding ? "#d32f2f" : "#388e3c");
+        }
+    }
+
+    function drawArrow(ctx, fromX, fromY, toX, toY, color) {
+        const headlen = 15;
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+        
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 4;
+        
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+        ctx.fill();
+    }
+
+    // Listeners inputs
+    materialSelect.addEventListener('change', updateValues);
+    fnRange.addEventListener('input', updateValues);
+
+    // Init
+    updateValues();
+</script>
+
+</body>
+</html>
