@@ -22,5 +22,6 @@ Cette simulation reprend l'exercice du palet de hockey (TD Page 3). Elle permet 
 
 ### À retenir
 Le cercle rouge représente la base du cône de frottement projetée au sol.
-* Le rayon de ce cercle dépend de l'effort normal $F_N$ (le poids du palet) et du coefficient $\mu$.
-* L'angle du cône $\varphi$ est visible dans le panneau de calcul : $\mu = \tan(\varphi)$.
+
+- Le rayon de ce cercle dépend de l'effort normal $F_N$ (le poids du palet) et du coefficient $\mu$.
+- L'angle du cône $\varphi$ est visible dans le panneau de calcul : $\mu = \tan(\varphi)$.
