@@ -40,6 +40,10 @@ nav:
     - Mobilité: premiere_mobilite.md
     - Compétences: premiere_competence.md
     - Carte mentale: premiere_mind_map.md
+    - Frottements:
+        - Introduction: chaine_info/frottement.md
+        - Palet de hockey: chaine_info/palet.md
+        - Freins: chaine_info/frein.md
     - Chaîne de l'information:
         - Introduction: chaine_info/index.md
         - Quiz STI2D: chaine_info/quiz.md
@@ -64,9 +68,11 @@ markdown_extensions:
       linenums: true     # Active les numéros de ligne (facultatif)
   - pymdownx.superfences
   - pymdownx.highlight
+  - pymdownx.arithmatex:
+      generic: true
 
 extra_javascript:
-  - js/firebase.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 
 plugins:
