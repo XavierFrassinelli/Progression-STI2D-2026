@@ -4,9 +4,12 @@
 
 Cette simulation reprend l'exercice du palet de hockey (TD Page 3). Elle permet de visualiser la zone d'adhérence en vue de dessus.
 
-**Instructions :**
+**Instructions :
+
 1. Sélectionnez un couple de matériaux (ex: Plastique/Roche).
+
 2. Cliquez et tirez depuis le centre du palet pour simuler une force de poussée.
+
 3. Observez si la force reste à l'intérieur du cercle limite défini par $F_{lim} = \mu \cdot F_N$.
 
 <iframe 
