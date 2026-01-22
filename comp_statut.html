@@ -1,0 +1,49 @@
+<div id="grille-competences" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Données simulées venant de Firebase
+  const competences = [
+    { nom: "CO1.1", v1: 5, v2: 3, v3: 8 },
+    { nom: "CO1.2", v1: 2, v2: 10, v3: 1 },
+    { nom: "CO1.3", v1: 0, v2: 2, v3: 12 }
+  ];
+
+  const conteneur = document.getElementById('grille-competences');
+
+  competences.forEach((skill, index) => {
+    // 1. Créer la "fenêtre" (Carte)
+    const carte = document.createElement('div');
+    carte.className = 'carte-competence';
+    carte.style.border = '1px solid #ddd';
+    carte.style.padding = '10px';
+    
+    // 2. Créer le Canvas pour le graphique
+    const canvas = document.createElement('canvas');
+    canvas.id = `chart-${index}`; // ID unique indispensable
+    
+    // 3. Assembler
+    carte.innerHTML = `<h3>${skill.nom}</h3>`;
+    carte.appendChild(canvas);
+    conteneur.appendChild(carte);
+
+    // 4. Générer le graphique Chart.js dans ce canvas spécifique
+    new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: ['Validation'],
+        datasets: [
+            { label: 'Vue 1', data: [skill.v1], backgroundColor: 'red' },
+            { label: 'Vue 2', data: [skill.v2], backgroundColor: 'orange' },
+            { label: 'Vue 3', data: [skill.v3], backgroundColor: 'green' }
+        ]
+      },
+      options: {
+        indexAxis: 'y', // Astuce : Barres horizontales pour gagner de la place dans une petite carte
+        scales: { x: { stacked: true }, y: { stacked: true } }
+      }
+    });
+  });
+</script>
