@@ -184,14 +184,33 @@ export default function EnergyChainApp() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
+  // Identifiant anonyme (Supabase)
+  const [anonId, setAnonId] = useState<string | null>(null);
+  const [classCode, setClassCode] = useState<string>('');
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
   const [currentItems, setCurrentItems] = useState<ComponentItem[]>([]);
 
   const AI_PROXY_URL = "http://localhost:8787/api/generate-scenario";
+  const SUPABASE_FUNCTIONS_URL = "https://pttzsstvvgvdgdsbxfuk.functions.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHpzc3R2dmd2ZGdkc2J4ZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDcxMTMsImV4cCI6MjA4NzQyMzExM30.tX_rUkux3eb6HvIXtjifZjmQLgvs3UQUeIvF38ika6Q";
+  const LOCAL_ANON_ID_KEY = "sti2d_anon_id_v1";
+  const LOCAL_CLASS_CODE_KEY = "sti2d_class_code_v1";
+  const isSupabaseConfigured =
+    !!SUPABASE_FUNCTIONS_URL &&
+    !!SUPABASE_ANON_KEY &&
+    !SUPABASE_FUNCTIONS_URL.includes("YOUR_") &&
+    !SUPABASE_ANON_KEY.includes("YOUR_");
 
   // Scroll to top when scenario changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [scenarioIndex]);
+
+  useEffect(() => {
+    void ensureAnonId();
+    loadClassCode();
+  }, []);
 
   const currentScenario = scenarios[scenarioIndex];
   
@@ -238,6 +257,123 @@ export default function EnergyChainApp() {
     });
     setScore(newScore);
     setValidated(true);
+    void submitResult(newScore);
+  };
+
+  const getStoredAnonId = () => {
+    try {
+      return localStorage.getItem(LOCAL_ANON_ID_KEY);
+    } catch {
+      return null;
+    }
+  };
+
+  const storeAnonId = (id: string) => {
+    try {
+      localStorage.setItem(LOCAL_ANON_ID_KEY, id);
+    } catch {
+      // Ignore storage failures (private mode, blocked, etc.)
+    }
+  };
+
+  const ensureAnonId = async () => {
+    const existing = getStoredAnonId();
+    if (existing) {
+      setAnonId(existing);
+      return;
+    }
+    if (!isSupabaseConfigured) {
+      setAnonId(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-anon-id`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data?.anonId) {
+        throw new Error(data?.error || `Erreur ID (${response.status})`);
+      }
+
+      setAnonId(data.anonId);
+      storeAnonId(data.anonId);
+    } catch (err) {
+      console.error('Erreur création ID anonyme:', err);
+      setAnonId(null);
+    }
+  };
+
+  const loadClassCode = () => {
+    try {
+      const stored = localStorage.getItem(LOCAL_CLASS_CODE_KEY);
+      if (stored) {
+        setClassCode(stored);
+      }
+    } catch {
+      // Ignore
+    }
+  };
+
+  const saveClassCode = (code: string) => {
+    try {
+      localStorage.setItem(LOCAL_CLASS_CODE_KEY, code);
+      setClassCode(code);
+    } catch {
+      // Ignore
+    }
+  };
+
+  const regenerateAnonId = async () => {
+    try {
+      localStorage.removeItem(LOCAL_ANON_ID_KEY);
+    } catch {
+      // Ignore
+    }
+    setAnonId(null);
+    await ensureAnonId();
+  };
+
+  const submitResult = async (newScore: number) => {
+    if (!isSupabaseConfigured || !anonId) return;
+
+    setSaveStatus('Envoi du resultat...');
+    try {
+      const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/submit-result`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          anonId,
+          classCode: classCode || null,
+          score: newScore,
+          maxScore: BLOCKS.length,
+          scenarioId: currentScenario.id,
+          scenarioTitle: currentScenario.title,
+          generated: !!currentScenario.isGenerated,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || data?.error) {
+        throw new Error(data?.error || `Erreur envoi (${response.status})`);
+      }
+
+      setSaveStatus('Resultat enregistre.');
+    } catch (err) {
+      console.error('Erreur envoi resultat:', err);
+      setSaveStatus('Echec de l\'enregistrement.');
+    }
   };
 
   // --- LOGIQUE IA VIA PROXY LOCAL ---
@@ -317,6 +453,42 @@ export default function EnergyChainApp() {
               <p className="text-sm text-slate-500 hidden md:block">
                 Reconstituez la chaîne fonctionnelle du système technique.
               </p>
+              <div className="mt-2 text-xs text-slate-500 flex flex-wrap items-center gap-2">
+                <span className="font-semibold">ID anonyme :</span>
+                {anonId ? (
+                  <>
+                    <span className="font-mono bg-slate-100 px-2 py-0.5 rounded">{anonId}</span>
+                    <button
+                      onClick={() => anonId && navigator.clipboard?.writeText(anonId)}
+                      className="text-indigo-600 hover:text-indigo-800"
+                    >
+                      Copier
+                    </button>
+                    <button
+                      onClick={regenerateAnonId}
+                      className="text-slate-500 hover:text-slate-700"
+                    >
+                      Regenerer
+                    </button>
+                  </>
+                ) : isSupabaseConfigured ? (
+                  <span className="text-slate-400">Creation en cours...</span>
+                ) : (
+                  <span className="text-amber-600">Config Supabase manquante</span>
+                )}
+              </div>
+              <div className="mt-2 text-xs text-slate-500 flex flex-wrap items-center gap-2">
+                <span className="font-semibold">Code classe :</span>
+                <input
+                  type="text"
+                  value={classCode}
+                  onChange={(e) => saveClassCode(e.target.value.toUpperCase())}
+                  placeholder="Ex: 1STI2D1"
+                  className="font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-300 focus:border-indigo-400 outline-none text-slate-800"
+                  style={{ minWidth: '120px', maxWidth: '150px' }}
+                />
+                <span className="text-slate-400 text-[10px]">(optionnel)</span>
+              </div>
             </div>
           </div>
           
@@ -534,6 +706,9 @@ export default function EnergyChainApp() {
         <div className="bg-white p-4 md:p-6 rounded-xl shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)] border border-slate-200 min-h-[140px] sticky bottom-4 z-50">
            {validated ? (
              <div className="text-center animate-fadeIn">
+              {saveStatus && (
+                <div className="text-xs text-slate-500 mb-2">{saveStatus}</div>
+              )}
                {score === 7 ? (
                  <div className="flex flex-col items-center gap-3">
                     <div className="flex items-center gap-2 text-2xl font-bold text-green-600">
