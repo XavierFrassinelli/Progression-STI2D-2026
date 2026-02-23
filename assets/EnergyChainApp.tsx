@@ -129,35 +129,44 @@ const ChainBox = ({
     <div 
       onClick={onClick}
       className={`
-        relative flex flex-col items-center justify-center p-2 rounded-lg border-2 shadow-sm transition-all cursor-pointer h-32 w-full
+        relative flex flex-col items-stretch justify-between p-2 pt-6 rounded-lg border-2 shadow-sm transition-all cursor-pointer min-h-36 w-full
         ${bgColors}
         ${isSelected ? 'ring-4 ring-indigo-400 scale-105 z-10' : 'hover:shadow-md'}
       `}
     >
-      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 absolute top-1 left-2">
-        {definition.label}
-      </span>
+      {/* Étiquette du bloc - toujours visible en haut */}
+      <div className="absolute top-1 left-2 right-2">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-white/50 px-1.5 py-0.5 rounded inline-block">
+          {definition.label}
+        </span>
+      </div>
       
       {content ? (
-        <div className={`
-          ${statusColor} px-3 py-2 rounded shadow text-center text-sm font-semibold w-full z-10 animate-fadeIn break-words
-        `}>
-          {content.name}
+        <div className="flex items-center justify-center flex-1 pt-2">
+          <div className={`
+            ${statusColor} px-3 py-2.5 rounded shadow text-center text-sm font-semibold w-full animate-fadeIn
+          `}>
+            <div className="line-clamp-3 leading-tight" title={content.name}>
+              {content.name}
+            </div>
+          </div>
         </div>
       ) : (
         <div className={`
-          text-center p-2 rounded w-full h-full flex items-center justify-center transition-opacity duration-300
+          flex items-center justify-center flex-1 transition-opacity duration-300
           ${showHint ? 'opacity-100' : 'opacity-20 hover:opacity-50'}
         `}>
            {showHint ? (
-             <span className="text-gray-400 text-sm italic font-medium uppercase border-dashed border-b border-gray-300">{definition.label}</span>
+             <span className="text-gray-400 text-xs italic font-medium uppercase border-dashed border-b border-gray-300 px-2 text-center">
+               {definition.label}
+             </span>
            ) : (
-             <span className="text-3xl font-bold text-slate-200">?</span>
+             <span className="text-4xl font-bold text-slate-200">?</span>
            )}
         </div>
       )}
 
-      {/* Petit indicateur de validation */}
+      {/* Indicateur de validation */}
       {isCorrect && <CheckCircle className="absolute -top-2 -right-2 w-6 h-6 text-green-600 bg-white rounded-full shadow-sm z-20" />}
     </div>
   );
