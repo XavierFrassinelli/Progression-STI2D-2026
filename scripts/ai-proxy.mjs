@@ -1,6 +1,9 @@
 import http from 'node:http';
+import https from 'node:https';
+import 'dotenv/config';
 
 const PORT = Number(process.env.AI_PROXY_PORT || 8787);
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 const REQUIRED_BLOCKS = [
   'acquerir',
@@ -160,6 +163,150 @@ function buildPromptDrivenItems(prompt) {
     convertir: [`Actionneur principal du ${systemLabel}`, `Convertisseur d'énergie du ${systemLabel}`],
     transmettre: [`Transmission mécanique du ${systemLabel}`, `Organe final du ${systemLabel}`]
   };
+}
+
+async function callGeminiAPI(prompt) {
+  const systemLabel = toReadableSystemLabel(prompt);
+  
+  const geminiPrompt = `Tu es un expert en formation STI2D (Sciences et Technologies de l'Industrie et du Développement Durable). 
+Un enseignant souhaite créer un exercice sur les chaînes d'information et d'énergie pour le système suivant : "${prompt}".
+
+Génère un scénario pédagogique au format JSON EXACT suivant :
+{
+  "title": "Titre court du système (ex: Drone stabilisé, Convoyeur de tri)",
+  "instruction": "Consigne pédagogique précise pour l'élève",
+  "items": [
+    {
+      "id": "item_1",
+      "name": "Nom technique exact du composant 1",
+      "targetBlock": "acquerir"
+    },
+    {
+      "id": "item_2",
+      "name": "Nom technique exact du composant 2",
+      "targetBlock": "traiter"
+    },
+    {
+      "id": "item_3",
+      "name": "Nom technique exact du composant 3",
+      "targetBlock": "communiquer"
+    },
+    {
+      "id": "item_4",
+      "name": "Nom technique exact du composant 4",
+      "targetBlock": "alimenter"
+    },
+    {
+      "id": "item_5",
+      "name": "Nom technique exact du composant 5",
+      "targetBlock": "distribuer"
+    },
+    {
+      "id": "item_6",
+      "name": "Nom technique exact du composant 6",
+      "targetBlock": "convertir"
+    },
+    {
+      "id": "item_7",
+      "name": "Nom technique exact du composant 7",
+      "targetBlock": "transmettre"
+    }
+  ]
+}
+
+Les 7 blocs fonctionnels OBLIGATOIRES (un composant par bloc) :
+1. "acquerir" : capteurs, détecteurs (ex: GPS, capteur de température, photoélectrique)
+2. "traiter" : unités de traitement (ex: microcontrôleur, API, calculateur)
+3. "communiquer" : bus de communication (ex: CAN, Modbus, liaison radio)
+4. "alimenter" : sources d'énergie (ex: batterie, réseau 230V, alimentation)
+5. "distribuer" : organes de distribution (ex: variateur, contacteur, ESC)
+6. "convertir" : actionneurs (ex: moteur, résistance chauffante, électrovanne)
+7. "transmettre" : éléments de transmission (ex: engrenages, courroie, hélices)
+
+IMPORTANT :
+- Utilise des noms techniques RÉELS et PRÉCIS adaptés au système "${prompt}"
+- Chaque composant doit être clairement identifiable par un élève de STI2D
+- Évite les descriptions génériques comme "Capteur principal du système"
+- Privilégie les composants industriels standards (normes, marques, types précis)
+- L'instruction doit être claire et pédagogique
+
+Réponds UNIQUEMENT avec le JSON, sans texte additionnel.`;
+
+  return new Promise((resolve, reject) => {
+    const postData = JSON.stringify({
+      contents: [{
+        parts: [{ text: geminiPrompt }]
+      }]
+    });
+
+    const options = {
+      hostname: 'generativelanguage.googleapis.com',
+      path: `/v1/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      },
+      timeout: 30000
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          
+          if (res.statusCode !== 200) {
+            reject(new Error(`Gemini API error ${res.statusCode}: ${data}`));
+            return;
+          }
+
+          const textContent = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!textContent) {
+            reject(new Error('Format de réponse Gemini invalide'));
+            return;
+          }
+
+          // Extraire le JSON de la réponse (parfois entouré de ```json)
+          const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) {
+            reject(new Error('Aucun JSON trouvé dans la réponse Gemini'));
+            return;
+          }
+
+          const scenario = JSON.parse(jsonMatch[0]);
+          
+          // Validation du format
+          if (!scenario.title || !scenario.instruction || !Array.isArray(scenario.items)) {
+            reject(new Error('Format de scénario invalide'));
+            return;
+          }
+
+          if (scenario.items.length !== 7) {
+            reject(new Error('Le scénario doit contenir exactement 7 items'));
+            return;
+          }
+
+          resolve(scenario);
+        } catch (error) {
+          reject(new Error(`Erreur parsing Gemini: ${error.message}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`Erreur réseau Gemini: ${error.message}`));
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Timeout Gemini API'));
+    });
+
+    req.write(postData);
+    req.end();
+  });
 }
 
 const SCENARIO_LIBRARY = {
@@ -342,7 +489,7 @@ const server = http.createServer((req, res) => {
     }
   });
 
-  req.on('end', () => {
+  req.on('end', async () => {
     try {
       const parsedBody = JSON.parse(body || '{}');
       const prompt = typeof parsedBody?.prompt === 'string' ? parsedBody.prompt.trim() : '';
@@ -350,6 +497,20 @@ const server = http.createServer((req, res) => {
         return writeJson(res, 400, { error: 'Le champ "prompt" est requis.' });
       }
 
+      // Tentative 1 : Gemini API (si clé disponible)
+      if (GEMINI_API_KEY) {
+        try {
+          console.log(`[ai-proxy] Appel Gemini API pour: "${prompt}"`);
+          const geminiScenario = await callGeminiAPI(prompt);
+          console.log(`[ai-proxy] ✓ Scénario généré par Gemini`);
+          return writeJson(res, 200, { ...geminiScenario, provider: 'gemini-pro' });
+        } catch (geminiError) {
+          console.warn(`[ai-proxy] Gemini échec: ${geminiError.message}`);
+          console.log(`[ai-proxy] → Fallback vers générateur local`);
+        }
+      }
+
+      // Tentative 2 : Générateur local (fallback)
       const scenario = buildLocalScenario(prompt);
       return writeJson(res, 200, { ...scenario, provider: 'copilot-local-generator' });
     } catch (error) {
@@ -359,5 +520,11 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[ai-proxy] Générateur Copilot local en écoute sur http://localhost:${PORT}`);
+  console.log(`[ai-proxy] 🚀 Serveur AI proxy en écoute sur http://localhost:${PORT}`);
+  if (GEMINI_API_KEY) {
+    console.log(`[ai-proxy] ✓ Gemini API activée`);
+  } else {
+    console.log(`[ai-proxy] ⚠ Gemini API désactivée (clé manquante)`);
+  }
+  console.log(`[ai-proxy] ✓ Générateur local en fallback`);
 });
