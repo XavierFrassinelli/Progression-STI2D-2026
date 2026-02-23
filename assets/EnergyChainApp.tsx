@@ -209,6 +209,13 @@ export default function EnergyChainApp() {
     setCurrentItems(shuffleArray(scenarios[scenarioIndex].items));
   };
 
+  const handleOpenGenerator = () => {
+    handleReset();
+    setGeneratorPrompt("");
+    setGenerationError(null);
+    setIsGeneratorOpen(true);
+  };
+
   const handleBoxClick = (blockId: BlockId) => {
     if (validated) return;
     if (selectedItem) {
@@ -330,7 +337,7 @@ export default function EnergyChainApp() {
              <div className="w-px h-6 bg-slate-300 mx-1 hidden sm:block"></div>
 
              <button 
-               onClick={() => setIsGeneratorOpen(true)}
+               onClick={handleOpenGenerator}
                className="px-3 py-1.5 rounded-md text-sm font-bold bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2 whitespace-nowrap"
              >
                <Sparkles size={14} /> Nouveau Scénario
@@ -612,7 +619,7 @@ export default function EnergyChainApp() {
       </div>
       {/* --- MODALE GÉNÉRATEUR IA --- */}
       {isGeneratorOpen && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fadeIn">
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-white flex justify-between items-start">
               <div>
