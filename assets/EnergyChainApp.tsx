@@ -154,15 +154,9 @@ const ChainBox = ({
       ) : (
         <div className={`
           flex items-center justify-center flex-1 transition-opacity duration-300
-          ${showHint ? 'opacity-100' : 'opacity-20 hover:opacity-50'}
+          ${showHint ? 'opacity-60' : 'opacity-20 hover:opacity-50'}
         `}>
-           {showHint ? (
-             <span className="text-gray-400 text-xs italic font-medium uppercase border-dashed border-b border-gray-300 px-2 text-center">
-               {definition.label}
-             </span>
-           ) : (
-             <span className="text-4xl font-bold text-slate-200">?</span>
-           )}
+          <span className="text-4xl font-bold text-slate-200">?</span>
         </div>
       )}
 
