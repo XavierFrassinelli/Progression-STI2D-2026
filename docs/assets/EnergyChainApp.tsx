@@ -281,8 +281,8 @@ export default function EnergyChainApp() {
       setGeneratorPrompt("");
 
     } catch (err) {
-      console.error("Erreur générateur local:", err);
-      setGenerationError("Désolé, je n'ai pas pu générer ce scénario. Vérifiez que le générateur Copilot local est démarré.");
+      console.error("Erreur générateur IA:", err);
+      setGenerationError("Désolé, je n'ai pas pu générer ce scénario. Vérifiez que le serveur IA (port 8787) est démarré.");
     } finally {
       setIsGenerating(false);
     }
@@ -625,9 +625,9 @@ export default function EnergyChainApp() {
               <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Sparkles className="fill-yellow-300 text-yellow-300 animate-pulse" />
-                  Générateur de Scénario Copilot
+                  Générateur de Scénario IA
                 </h2>
-                <p className="text-indigo-100 text-sm mt-1">Créez un exercice sur mesure.</p>
+                <p className="text-indigo-100 text-sm mt-1">Créez un exercice sur mesure avec Gemini.</p>
               </div>
               <button onClick={() => setIsGeneratorOpen(false)} className="text-white/80 hover:text-white transition-colors">
                 <X size={24} />
@@ -668,12 +668,12 @@ export default function EnergyChainApp() {
                 {isGenerating ? (
                   <><Loader className="animate-spin" /> Génération en cours...</>
                 ) : (
-                  <><Sparkles size={20} /> Générer avec Copilot</>
+                  <><Sparkles size={20} /> Générer avec IA</>
                 )}
               </button>
               
               <p className="text-xs text-slate-400 text-center mt-2">
-                Utilise le générateur Copilot local pour créer des scénarios pédagogiques uniques.
+                Utilise Gemini 2.5 Flash pour créer des scénarios techniques précis.
               </p>
             </div>
           </div>
