@@ -135,7 +135,7 @@ const ChainBox = ({
       `}
     >
       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1 absolute top-1 left-2">
-        {definition.type === 'info' ? 'Info' : 'Énergie'}
+        {definition.label}
       </span>
       
       {content ? (
