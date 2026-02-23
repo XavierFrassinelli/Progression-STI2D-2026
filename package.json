@@ -9,7 +9,9 @@
   "scripts": {
     "test": "node sauvegarde.js",
     "build": "webpack --config webpack.config.cjs",
-    "start": "webpack serve --open"
+    "start": "webpack serve --open",
+    "start:ai": "node scripts/ai-proxy.mjs",
+    "start:app": "webpack serve --open"
   },
   "repository": {
     "type": "git",

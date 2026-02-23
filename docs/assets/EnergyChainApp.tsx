@@ -183,6 +183,8 @@ export default function EnergyChainApp() {
 
   const [currentItems, setCurrentItems] = useState<ComponentItem[]>([]);
 
+  const AI_PROXY_URL = "http://localhost:8787/api/generate-scenario";
+
   // Scroll to top when scenario changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -190,11 +192,6 @@ export default function EnergyChainApp() {
 
   const currentScenario = scenarios[scenarioIndex];
   
-  // --- CONFIGURATION API KEY ---
-  // Remplacez la chaîne vide ci-dessous par votre clé API si vous testez rapidement en local
-  // Pour la production, utilisez les variables d'environnement (ex: process.env.REACT_APP_GEMINI_API_KEY ou import.meta.env.VITE_GEMINI_API_KEY)
-  const apiKey = "AIzaSyDwDwLI9mt63UuBitMbcmyzI8dJe87QR2Y"; 
-
   useEffect(() => {
     handleReset();
     setCurrentItems(shuffleArray(scenarios[scenarioIndex].items));
@@ -233,59 +230,27 @@ export default function EnergyChainApp() {
     setValidated(true);
   };
 
-  // --- LOGIQUE GEMINI API ---
+  // --- LOGIQUE IA VIA PROXY LOCAL ---
   const generateScenario = async () => {
     if (!generatorPrompt.trim()) return;
     setIsGenerating(true);
     setGenerationError(null);
 
-    const systemPrompt = `
-      Tu es un expert en technologie et pédagogie. Génère un scénario JSON pour un exercice sur la chaîne d'énergie et d'information.
-      Sujet: "${generatorPrompt}".
-      
-      Format JSON strict attendu:
-      {
-        "title": "Titre court (ex: Robot Aspirateur)",
-        "instruction": "Une phrase de consigne contextuelle.",
-        "items": [
-          { "name": "Nom du composant pour Acquérir", "targetBlock": "acquerir" },
-          { "name": "Nom du composant pour Traiter", "targetBlock": "traiter" },
-          { "name": "Nom du composant pour Communiquer", "targetBlock": "communiquer" },
-          { "name": "Nom du composant pour Alimenter", "targetBlock": "alimenter" },
-          { "name": "Nom du composant pour Distribuer", "targetBlock": "distribuer" },
-          { "name": "Nom du composant pour Convertir", "targetBlock": "convertir" },
-          { "name": "Nom du composant pour Transmettre", "targetBlock": "transmettre" }
-        ]
-      }
-      Assure-toi que les targetBlock sont EXACTEMENT : acquerir, traiter, communiquer, alimenter, distribuer, convertir, transmettre.
-      Sois précis sur les composants techniques. Réponds uniquement avec le JSON.
-    `;
-
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: systemPrompt }] }],
-            generationConfig: {
-                responseMimeType: "application/json"
-            }
-          }),
-        }
-      );
+      const response = await fetch(AI_PROXY_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: generatorPrompt,
+        }),
+      });
 
-      const data = await response.json();
-      
-      if (data.error) throw new Error(data.error.message);
-      
-      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!textResponse) throw new Error("Pas de réponse de l'IA");
-
-      const generatedData = JSON.parse(textResponse);
+      const generatedData = await response.json();
+      if (!response.ok || generatedData.error) {
+        throw new Error(generatedData.error || `Erreur générateur (${response.status})`);
+      }
 
       // Validation basique et ajout des IDs
       const newItems = generatedData.items.map((item: any, idx: number) => ({
@@ -309,8 +274,8 @@ export default function EnergyChainApp() {
       setGeneratorPrompt("");
 
     } catch (err) {
-      console.error("Erreur IA:", err);
-      setGenerationError("Désolé, je n'ai pas pu générer ce scénario. Vérifiez la clé API.");
+      console.error("Erreur générateur local:", err);
+      setGenerationError("Désolé, je n'ai pas pu générer ce scénario. Vérifiez que le générateur Copilot local est démarré.");
     } finally {
       setIsGenerating(false);
     }
@@ -653,7 +618,7 @@ export default function EnergyChainApp() {
               <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Sparkles className="fill-yellow-300 text-yellow-300 animate-pulse" />
-                  Générateur de Scénario IA
+                  Générateur de Scénario Copilot
                 </h2>
                 <p className="text-indigo-100 text-sm mt-1">Créez un exercice sur mesure.</p>
               </div>
@@ -696,12 +661,12 @@ export default function EnergyChainApp() {
                 {isGenerating ? (
                   <><Loader className="animate-spin" /> Génération en cours...</>
                 ) : (
-                  <><Sparkles size={20} /> Générer avec l'IA</>
+                  <><Sparkles size={20} /> Générer avec Copilot</>
                 )}
               </button>
               
               <p className="text-xs text-slate-400 text-center mt-2">
-                Utilise Gemini 2.5 Flash pour créer des scénarios pédagogiques uniques.
+                Utilise le générateur Copilot local pour créer des scénarios pédagogiques uniques.
               </p>
             </div>
           </div>
