@@ -11,7 +11,11 @@
     "build": "webpack --config webpack.config.cjs",
     "start": "webpack serve --open",
     "start:ai": "node scripts/ai-proxy.mjs",
-    "start:app": "webpack serve --open"
+    "start:app": "webpack serve --open",
+    "deploy:safe": "mkdocs gh-deploy --remote-name origin",
+    "deploy:strict:safe": "npm run build && mkdocs gh-deploy --remote-name origin",
+    "deploy": "mkdocs gh-deploy --remote-name origin --force",
+    "deploy:strict": "npm run build && mkdocs gh-deploy --remote-name origin --force"
   },
   "repository": {
     "type": "git",
