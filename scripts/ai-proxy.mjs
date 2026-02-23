@@ -55,7 +55,111 @@ function inferDomain(prompt) {
     }
   }
 
-  return 'generic';
+  return 'unknown';
+}
+
+function toReadableSystemLabel(prompt) {
+  const cleaned = String(prompt || '')
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleaned) {
+    return 'système technique';
+  }
+
+  return cleaned.charAt(0).toLowerCase() + cleaned.slice(1);
+}
+
+function includesAny(text, keywords) {
+  return keywords.some((keyword) => text.includes(keyword));
+}
+
+function buildPromptDrivenItems(prompt) {
+  const normalized = normalizePrompt(prompt);
+  const systemLabel = toReadableSystemLabel(prompt);
+
+  if (includesAny(normalized, ['compresseur', 'pneumatique', 'air comprime', 'air comprimee', 'air'])) {
+    return {
+      acquerir: ['Pressostat', 'Capteur de pression de cuve'],
+      traiter: ['Automate de compression', 'Régulateur électronique de pression'],
+      communiquer: ['Bus Modbus RTU', 'Signal TOR vers coffret de commande'],
+      alimenter: ['Alimentation triphasée 400V', 'Réseau 230V/400V + alimentation de commande 24V'],
+      distribuer: ['Contacteur moteur', 'Démarreur progressif'],
+      convertir: ['Moteur électrique du compresseur', 'Bloc compresseur à vis'],
+      transmettre: ['Transmission courroie-poulies', `Arbre d’entraînement du ${systemLabel}`]
+    };
+  }
+
+  if (includesAny(normalized, ['pompe', 'hydraulique', 'fluide', 'eau'])) {
+    return {
+      acquerir: ['Capteur de niveau', 'Capteur de pression hydraulique'],
+      traiter: ['API de pompage', 'Carte de régulation débit/pression'],
+      communiquer: ['Bus CANopen', 'Liaison de commande 4-20 mA'],
+      alimenter: ['Alimentation moteur 400V', 'Bloc d’alimentation 24V commande'],
+      distribuer: ['Électrovanne proportionnelle', 'Contacteur de puissance'],
+      convertir: ['Moteur de pompe', 'Pompe centrifuge'],
+      transmettre: ['Réseau de tuyauterie', 'Arbre + roue hydraulique']
+    };
+  }
+
+  if (includesAny(normalized, ['chauffage', 'thermique', 'clim', 'temperature', 'four'])) {
+    return {
+      acquerir: ['Sonde de température PT100', 'Thermistance NTC'],
+      traiter: ['Régulateur PID', 'Microcontrôleur de gestion thermique'],
+      communiquer: ['Bus KNX/Modbus', 'Sortie de commande PWM'],
+      alimenter: ['Alimentation secteur 230V', 'Alimentation 24V de régulation'],
+      distribuer: ['Relais statique (SSR)', 'Carte de puissance triac'],
+      convertir: ['Résistance chauffante', 'Compresseur frigorifique'],
+      transmettre: ['Échangeur thermique', 'Ventilateur de soufflage']
+    };
+  }
+
+  if (includesAny(normalized, ['robot', 'manipulateur', 'bras', 'cobot'])) {
+    return {
+      acquerir: ['Codeur absolu d’axe', 'Capteur de couple'],
+      traiter: ['Contrôleur robotique', 'PLC de cellule robotisée'],
+      communiquer: ['Bus EtherCAT', 'Réseau industriel Profinet'],
+      alimenter: ['Alimentation 48V servomoteurs', 'Réseau triphasé 400V'],
+      distribuer: ['Drive servo', 'Variateur multi-axes'],
+      convertir: ['Servomoteur brushless', 'Actionneur électrique d’axe'],
+      transmettre: ['Réducteur harmonique', `Chaîne cinématique du ${systemLabel}`]
+    };
+  }
+
+  if (includesAny(normalized, ['vehicule', 'voiture', 'velo', 'trottinette', 'train', 'ascenseur'])) {
+    return {
+      acquerir: ['Capteur de vitesse', 'Capteur de position'],
+      traiter: ['Calculateur embarqué', 'Contrôleur de traction'],
+      communiquer: ['Bus CAN', 'Réseau Ethernet embarqué'],
+      alimenter: ['Batterie de traction', 'Pack d’alimentation principal'],
+      distribuer: ['Onduleur de puissance', 'Module de distribution HV'],
+      convertir: ['Machine électrique de traction', 'Moteur brushless de propulsion'],
+      transmettre: ['Réducteur + arbre de transmission', 'Train d’engrenages final']
+    };
+  }
+
+  if (includesAny(normalized, ['convoyeur', 'tri', 'ligne', 'usine', 'machine'])) {
+    return {
+      acquerir: ['Capteur photoélectrique', 'Capteur inductif de présence'],
+      traiter: ['Automate programmable', 'Contrôleur de ligne'],
+      communiquer: ['Bus de terrain Modbus', 'Réseau Profinet'],
+      alimenter: ['Réseau 230V/400V', 'Bloc d’alimentation 24V DC'],
+      distribuer: ['Variateur de vitesse', 'Contacteur de puissance'],
+      convertir: ['Motoréducteur', 'Moteur asynchrone'],
+      transmettre: ['Bande transporteuse', `Rouleaux et courroies du ${systemLabel}`]
+    };
+  }
+
+  return {
+    acquerir: [`Capteur de position du ${systemLabel}`, `Capteur de mesure du ${systemLabel}`],
+    traiter: [`Microcontrôleur de pilotage du ${systemLabel}`, `Unité de commande du ${systemLabel}`],
+    communiquer: [`Bus de communication du ${systemLabel}`, `Interface de commande du ${systemLabel}`],
+    alimenter: [`Alimentation principale du ${systemLabel}`, `Source d'énergie du ${systemLabel}`],
+    distribuer: [`Carte de puissance du ${systemLabel}`, `Organe de commutation du ${systemLabel}`],
+    convertir: [`Actionneur principal du ${systemLabel}`, `Convertisseur d'énergie du ${systemLabel}`],
+    transmettre: [`Transmission mécanique du ${systemLabel}`, `Organe final du ${systemLabel}`]
+  };
 }
 
 const SCENARIO_LIBRARY = {
@@ -63,7 +167,7 @@ const SCENARIO_LIBRARY = {
     title: ['Drone Stabilisé', 'Drone de Surveillance'],
     instruction: ['Associez les composants du drone aux fonctions de la chaîne.'],
     items: {
-      acquerir: ['IMU (gyroscope + accéléromètre)', 'Capteur de pression/altimètre'],
+      acquerir: ['Capteur de position (GNSS/GPS)', 'IMU (gyroscope + accéléromètre)', 'Capteur de pression/altimètre'],
       traiter: ['Contrôleur de vol (STM32)', 'Microcontrôleur de stabilisation'],
       communiquer: ['Bus ESC (PWM/DShot)', 'Liaison radio 2.4 GHz'],
       alimenter: ['Batterie LiPo 4S', 'Pack batterie Li-ion'],
@@ -176,35 +280,45 @@ const SCENARIO_LIBRARY = {
       transmettre: ['Hélice', 'Hélice + axe']
     }
   },
-  generic: {
+  unknown: {
     title: ['Système Technique', 'Système Automatisé'],
     instruction: ['Associez les composants proposés aux 7 fonctions de la chaîne.'],
     items: {
-      acquerir: ['Capteur principal', 'Capteur de mesure'],
-      traiter: ['Unité de traitement', 'Carte de commande'],
-      communiquer: ['Liaison de commande', 'Interface de communication'],
-      alimenter: ['Source d’énergie', 'Alimentation électrique'],
-      distribuer: ['Étage de distribution', 'Organe de puissance'],
-      convertir: ['Actionneur principal', 'Moteur électrique'],
-      transmettre: ['Mécanisme de transmission', 'Organe de transmission']
+      acquerir: ['Capteur principal du système', 'Capteur de mesure du système'],
+      traiter: ['Unité de commande du système', 'Microcontrôleur du système'],
+      communiquer: ['Liaison de commande du système', 'Bus de communication du système'],
+      alimenter: ['Alimentation du système', 'Source d’énergie du système'],
+      distribuer: ['Distribution de puissance du système', 'Organe de commutation du système'],
+      convertir: ['Actionneur principal du système', 'Convertisseur d’énergie du système'],
+      transmettre: ['Transmission mécanique du système', 'Organe final du système']
     }
   }
 };
 
 function buildLocalScenario(prompt) {
   const domain = inferDomain(prompt);
-  const library = SCENARIO_LIBRARY[domain] || SCENARIO_LIBRARY.generic;
+  const library = SCENARIO_LIBRARY[domain] || SCENARIO_LIBRARY.unknown;
+  const systemLabel = toReadableSystemLabel(prompt);
+  const isUnknownDomain = domain === 'unknown';
 
   const titleCore = pickOne(library.title);
   const title = prompt.length > 2
     ? `${titleCore} — ${prompt.trim().slice(0, 45)}`
     : titleCore;
 
-  const instruction = pickOne(library.instruction);
+  const instruction = isUnknownDomain
+    ? `Associez les composants du ${systemLabel} aux 7 fonctions de la chaîne d'information et d'énergie.`
+    : pickOne(library.instruction);
+
+  const itemSource = isUnknownDomain
+    ? buildPromptDrivenItems(prompt)
+    : library.items;
 
   const items = REQUIRED_BLOCKS.map((targetBlock, index) => ({
     id: `gen_${Date.now()}_${index}`,
-    name: pickOne(library.items[targetBlock]),
+    name: domain === 'drone' && targetBlock === 'acquerir'
+      ? 'Capteur de position (GNSS/GPS)'
+      : pickOne(itemSource[targetBlock]),
     targetBlock
   }));
 
