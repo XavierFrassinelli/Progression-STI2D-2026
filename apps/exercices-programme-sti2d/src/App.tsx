@@ -249,7 +249,7 @@ export default function App() {
                             else if (isSelected) cardClass += "bg-red-500/10 border-red-500 text-red-700 ";
                             else cardClass += "opacity-40 ";
                           } else {
-                            cardClass += isSelected ? "bg-[#12343b] text-[#f8f4ec] border-[#12343b] shadow-[0_12px_28px_rgba(18,52,59,0.16)] " : "hover:border-[#7aa6a2] hover:bg-white ";
+                            cardClass += isSelected ? "bg-[#0f2f35] text-white border-[#0f2f35] shadow-[0_12px_28px_rgba(18,52,59,0.16)] " : "hover:border-[#7aa6a2] hover:bg-white ";
                           }
 
                           return (
@@ -259,7 +259,7 @@ export default function App() {
                               className={cardClass}
                             >
                               <div className="flex items-center justify-between">
-                                <span>{option}</span>
+                                <span className={isSelected && !showResults ? 'font-medium text-white' : ''}>{option}</span>
                                 {showResults && isCorrect && <CheckCircle2 size={16} />}
                                 {showResults && isSelected && !isCorrect && <XCircle size={16} />}
                               </div>
