@@ -191,7 +191,7 @@ export default function EnergyChainApp() {
 
   const [currentItems, setCurrentItems] = useState<ComponentItem[]>([]);
 
-  const AI_PROXY_URL = "http://localhost:8787/api/generate-scenario";
+  const AI_PROXY_URL = "https://pttzsstvvgvdgdsbxfuk.functions.supabase.co/generate-scenario";
   const SUPABASE_FUNCTIONS_URL = "https://pttzsstvvgvdgdsbxfuk.functions.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHpzc3R2dmd2ZGdkc2J4ZnVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NDcxMTMsImV4cCI6MjA4NzQyMzExM30.tX_rUkux3eb6HvIXtjifZjmQLgvs3UQUeIvF38ika6Q";
   const LOCAL_ANON_ID_KEY = "sti2d_anon_id_v1";
@@ -421,7 +421,7 @@ export default function EnergyChainApp() {
 
     } catch (err) {
       console.error("Erreur générateur IA:", err);
-      setGenerationError("Désolé, je n'ai pas pu générer ce scénario. Vérifiez que le serveur IA (port 8787) est démarré.");
+      setGenerationError("Désolé, je n'ai pas pu générer ce scénario. Vérifiez la configuration de la fonction Supabase generate-scenario.");
     } finally {
       setIsGenerating(false);
     }
