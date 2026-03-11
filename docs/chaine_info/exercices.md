@@ -5,7 +5,7 @@ toc: false
 # Exercice liés au programme de STI2D
 
 <iframe 
-  src="https://ais-dev-d7pwbwmhnwiqinuw4jejih-195282571351.europe-west1.run.app/" 
+  src="https://ai.studio/apps/a91d3375-31b5-422e-9b4c-4069eb11cdd4" 
   width="100%" 
   height="800px" 
   style="border: 1px solid #141414; border-radius: 8px;"
