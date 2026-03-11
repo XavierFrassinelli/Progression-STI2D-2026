@@ -67,38 +67,39 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#E4E3E0] text-[#141414] font-sans selection:bg-[#141414] selection:text-[#E4E3E0]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#fffdf8_0%,_#f3eee4_42%,_#e6eced_100%)] text-[#1e2930] font-sans selection:bg-[#1f4d57] selection:text-[#f8f4ec]">
       {/* Header Grid */}
-      <header className="border-b border-[#141414] p-6 grid grid-cols-1 md:grid-cols-2 items-center">
+      <header className="border-b border-[#1f4d57]/15 bg-white/60 backdrop-blur-sm p-6 grid grid-cols-1 md:grid-cols-2 items-center shadow-[0_10px_40px_rgba(31,77,87,0.06)]">
         <div>
-          <h1 className="text-4xl font-bold tracking-tighter uppercase italic font-serif">STI2D.EXERCIZER</h1>
-          <p className="text-xs uppercase tracking-widest opacity-60 mt-1 font-mono">Système de génération d'exercices techniques v1.0</p>
+          <span className="inline-flex items-center rounded-full border border-[#1f4d57]/15 bg-[#f8f4ec] px-3 py-1 text-[10px] font-mono uppercase tracking-[0.25em] text-[#1f4d57]">Plateforme d'entrainement</span>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight text-[#12343b] font-serif">Entrainement STI2D</h1>
+          <p className="text-xs uppercase tracking-widest text-[#52636a] mt-2 font-mono">Generation rapide d'exercices techniques</p>
         </div>
         <div className="flex justify-end gap-4 mt-4 md:mt-0">
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] uppercase font-mono opacity-50">Statut Système</span>
+          <div className="flex flex-col items-end rounded-2xl border border-[#1f4d57]/12 bg-white/70 px-4 py-3 shadow-sm">
+            <span className="text-[10px] uppercase font-mono text-[#52636a]">Statut Systeme</span>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-xs font-mono">OPÉRATIONNEL</span>
+              <div className="w-2 h-2 bg-[#28b07a] rounded-full animate-pulse" />
+              <span className="text-xs font-mono text-[#12343b]">OPERATIONNEL</span>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-100px)]">
+      <main className="grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-100px)] gap-6 p-4 md:p-6">
         {/* Sidebar Controls */}
-        <aside className="lg:col-span-3 border-r border-[#141414] p-6 space-y-8">
+        <aside className="lg:col-span-3 rounded-[28px] border border-white/70 bg-white/72 p-6 space-y-8 shadow-[0_18px_60px_rgba(18,52,59,0.08)] backdrop-blur-sm">
           <section>
-            <h2 className="text-[11px] font-serif italic uppercase opacity-50 mb-4 tracking-wider">01. Sélection de la Spécialité</h2>
+            <h2 className="text-[11px] font-serif italic uppercase text-[#6b7b81] mb-4 tracking-wider">01. Selection de la specialite</h2>
             <div className="space-y-2">
               {SUBJECTS.map(s => (
                 <button
                   key={s.id}
                   onClick={() => setSelectedSubject(s.id)}
-                  className={`w-full text-left p-3 border transition-all duration-200 flex items-center justify-between group ${
+                  className={`w-full text-left p-3 rounded-2xl border transition-all duration-200 flex items-center justify-between group ${
                     selectedSubject === s.id 
-                      ? 'bg-[#141414] text-[#E4E3E0] border-[#141414]' 
-                      : 'border-[#141414]/20 hover:border-[#141414]'
+                      ? 'bg-[#12343b] text-[#f8f4ec] border-[#12343b] shadow-[0_12px_30px_rgba(18,52,59,0.18)]' 
+                      : 'bg-[#fcfaf5] border-[#d8dfdf] hover:border-[#6f9594] hover:bg-white'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -112,7 +113,7 @@ export default function App() {
           </section>
 
           <section>
-            <h2 className="text-[11px] font-serif italic uppercase opacity-50 mb-4 tracking-wider">02. Paramètres de l'Exercice</h2>
+            <h2 className="text-[11px] font-serif italic uppercase text-[#6b7b81] mb-4 tracking-wider">02. Parametres de l'exercice</h2>
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] uppercase font-mono block mb-1">Thème / Chapitre</label>
@@ -121,18 +122,18 @@ export default function App() {
                   placeholder="ex: Loi d'Ohm, Diagramme SysML..."
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  className="w-full bg-transparent border border-[#141414] p-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#141414]"
+                  className="w-full rounded-2xl bg-[#fffdfa] border border-[#cfd8d7] px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#7aa6a2]"
                 />
               </div>
               <div>
                 <label className="text-[10px] uppercase font-mono block mb-1">Niveau de Difficulté</label>
-                <div className="grid grid-cols-3 border border-[#141414]">
+                <div className="grid grid-cols-3 rounded-2xl border border-[#cfd8d7] overflow-hidden bg-[#fffdfa]">
                   {['Facile', 'Moyen', 'Difficile'].map(d => (
                     <button
                       key={d}
                       onClick={() => setDifficulty(d)}
                       className={`p-2 text-[10px] uppercase font-mono transition-colors ${
-                        difficulty === d ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414]/10'
+                        difficulty === d ? 'bg-[#1f4d57] text-[#f8f4ec]' : 'text-[#33454b] hover:bg-[#eef4f3]'
                       }`}
                     >
                       {d}
@@ -142,13 +143,13 @@ export default function App() {
               </div>
               <div>
                 <label className="text-[10px] uppercase font-mono block mb-1">Nombre de Questions</label>
-                <div className="grid grid-cols-2 border border-[#141414]">
+                <div className="grid grid-cols-2 rounded-2xl border border-[#cfd8d7] overflow-hidden bg-[#fffdfa]">
                   {[5, 10].map(n => (
                     <button
                       key={n}
                       onClick={() => setQuestionCount(n)}
                       className={`p-2 text-[10px] uppercase font-mono transition-colors ${
-                        questionCount === n ? 'bg-[#141414] text-[#E4E3E0]' : 'hover:bg-[#141414]/10'
+                        questionCount === n ? 'bg-[#1f4d57] text-[#f8f4ec]' : 'text-[#33454b] hover:bg-[#eef4f3]'
                       }`}
                     >
                       {n} Questions
@@ -159,7 +160,7 @@ export default function App() {
               <button
                 onClick={handleGenerate}
                 disabled={loading || !selectedSubject || !topic}
-                className="w-full bg-[#141414] text-[#E4E3E0] py-4 text-sm font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#141414]/90 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="w-full rounded-2xl bg-[#c96f4a] text-[#fffaf5] py-4 text-sm font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#b75f3b] disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-[0_16px_35px_rgba(201,111,74,0.28)]"
               >
                 {loading ? <RefreshCcw className="animate-spin" size={18} /> : 'Générer Exercice'}
               </button>
@@ -168,13 +169,13 @@ export default function App() {
         </aside>
 
         {/* Content Area */}
-        <section className="lg:col-span-9 p-6 overflow-y-auto">
+        <section className="lg:col-span-9 rounded-[32px] border border-white/70 bg-white/62 p-6 overflow-y-auto shadow-[0_18px_60px_rgba(18,52,59,0.08)] backdrop-blur-sm">
           <AnimatePresence mode="wait">
             {!exercise && !loading && !!errorMessage && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="max-w-xl mx-auto border border-red-600/30 bg-red-50 text-red-800 p-4"
+                className="max-w-xl mx-auto rounded-2xl border border-red-600/20 bg-red-50 text-red-800 p-4 shadow-sm"
               >
                 <p className="text-[10px] uppercase font-mono tracking-wider mb-1">Erreur de generation</p>
                 <p className="text-sm">{errorMessage}</p>
@@ -185,10 +186,12 @@ export default function App() {
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-20"
+                className="h-full flex flex-col items-center justify-center text-center space-y-4 text-[#567078]"
               >
-                <Activity size={64} strokeWidth={1} />
-                <p className="font-serif italic text-xl">En attente de configuration...</p>
+                <div className="rounded-full bg-[#eef4f3] p-6 shadow-inner">
+                  <Activity size={64} strokeWidth={1.25} />
+                </div>
+                <p className="font-serif italic text-xl text-[#2e4850]">Choisis une specialite et un theme pour commencer.</p>
               </motion.div>
             )}
 
@@ -198,14 +201,14 @@ export default function App() {
                 animate={{ opacity: 1 }}
                 className="h-full flex flex-col items-center justify-center space-y-6"
               >
-                <div className="w-48 h-1 bg-[#141414]/10 overflow-hidden">
+                <div className="w-48 h-1 rounded-full bg-[#1f4d57]/10 overflow-hidden">
                   <motion.div 
-                    className="h-full bg-[#141414]"
+                    className="h-full bg-[#c96f4a]"
                     animate={{ x: [-200, 200] }}
                     transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
                   />
                 </div>
-                <p className="text-[10px] uppercase font-mono tracking-[0.3em]">Calcul des paramètres pédagogiques...</p>
+                <p className="text-[10px] uppercase font-mono tracking-[0.3em] text-[#52636a]">Calcul des parametres pedagogiques...</p>
               </motion.div>
             )}
 
@@ -215,14 +218,14 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 className="max-w-3xl mx-auto space-y-12 pb-20"
               >
-                <div className="border-b-2 border-[#141414] pb-4">
+                <div className="border-b-2 border-[#1f4d57]/25 pb-4">
                   <div className="flex justify-between items-end">
                     <div>
-                      <span className="text-[10px] font-mono uppercase opacity-50">{exercise.subject} / {exercise.difficulty}</span>
-                      <h2 className="text-4xl font-bold tracking-tight">{exercise.title}</h2>
+                      <span className="text-[10px] font-mono uppercase text-[#6b7b81]">{exercise.subject} / {exercise.difficulty}</span>
+                      <h2 className="text-4xl font-bold tracking-tight text-[#12343b]">{exercise.title}</h2>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] font-mono uppercase opacity-50">Thème</span>
+                      <span className="text-[10px] font-mono uppercase text-[#6b7b81]">Theme</span>
                       <p className="font-serif italic">{exercise.topic}</p>
                     </div>
                   </div>
@@ -240,13 +243,13 @@ export default function App() {
                           const isSelected = userAnswers[q.id] === oIdx;
                           const isCorrect = q.correctAnswer === oIdx;
                           
-                          let cardClass = "p-4 border border-[#141414]/20 text-sm transition-all text-left ";
+                          let cardClass = "p-4 rounded-2xl border border-[#d6dfde] bg-[#fffdfa] text-sm transition-all text-left shadow-sm ";
                           if (showResults) {
                             if (isCorrect) cardClass += "bg-emerald-500/10 border-emerald-500 text-emerald-700 ";
                             else if (isSelected) cardClass += "bg-red-500/10 border-red-500 text-red-700 ";
                             else cardClass += "opacity-40 ";
                           } else {
-                            cardClass += isSelected ? "bg-[#141414] text-[#E4E3E0] border-[#141414] " : "hover:border-[#141414] ";
+                            cardClass += isSelected ? "bg-[#12343b] text-[#f8f4ec] border-[#12343b] shadow-[0_12px_28px_rgba(18,52,59,0.16)] " : "hover:border-[#7aa6a2] hover:bg-white ";
                           }
 
                           return (
@@ -270,7 +273,7 @@ export default function App() {
                           animate={{ opacity: 1, height: 'auto' }}
                           className="pl-12"
                         >
-                          <div className="bg-[#141414]/5 p-4 border-l-2 border-[#141414] text-xs">
+                          <div className="rounded-r-2xl bg-[#eef4f3] p-4 border-l-2 border-[#1f4d57] text-xs text-[#274148]">
                             <span className="font-bold uppercase block mb-1">Explication technique :</span>
                             {q.explanation}
                           </div>
@@ -284,12 +287,12 @@ export default function App() {
                   <button
                     onClick={() => setShowResults(true)}
                     disabled={Object.keys(userAnswers).length < exercise.questions.length}
-                    className="w-full border-2 border-[#141414] py-4 text-sm font-bold uppercase tracking-widest hover:bg-[#141414] hover:text-[#E4E3E0] transition-all disabled:opacity-20"
+                    className="w-full rounded-2xl border-2 border-[#1f4d57] py-4 text-sm font-bold uppercase tracking-widest text-[#1f4d57] hover:bg-[#1f4d57] hover:text-[#f8f4ec] transition-all disabled:opacity-20"
                   >
                     Valider mes réponses
                   </button>
                 ) : (
-                  <div className="bg-[#141414] text-[#E4E3E0] p-8 text-center space-y-4">
+                  <div className="rounded-[28px] bg-[#12343b] text-[#f8f4ec] p-8 text-center space-y-4 shadow-[0_20px_50px_rgba(18,52,59,0.22)]">
                     <h3 className="text-[10px] uppercase font-mono tracking-[0.4em]">Résultats de la Session</h3>
                     <div className="text-6xl font-bold font-serif italic">
                       {calculateScore()} / {exercise.questions.length}
@@ -301,7 +304,7 @@ export default function App() {
                     </p>
                     <button
                       onClick={handleGenerate}
-                      className="inline-flex items-center gap-2 text-[10px] uppercase font-mono border border-[#E4E3E0]/30 px-4 py-2 hover:bg-[#E4E3E0] hover:text-[#141414] transition-all"
+                      className="inline-flex items-center gap-2 rounded-full text-[10px] uppercase font-mono border border-[#f8f4ec]/30 px-4 py-2 hover:bg-[#f8f4ec] hover:text-[#12343b] transition-all"
                     >
                       <RefreshCcw size={12} /> Nouvel Exercice
                     </button>
