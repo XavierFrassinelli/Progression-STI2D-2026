@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Conversions et puissances de dix — STI2D Première</title>
+<style>
+  :root{
+    --bg:#f2f6f3; --card:#ffffff; --ink:#12211a; --muted:#5c6b63;
+    --line:#e1e8e3; --primary:#1c7a4c; --primary-2:#12603a; --primary-soft:#e8f5ee;
+    --accent:#6d28d9; --accent-soft:#f1ecfe;
+    --ok:#12743f; --ok-bg:#e6f7ec; --ok-line:#b7e3c6;
+    --ko:#a81818; --ko-bg:#fdeceb; --ko-line:#f4bcb8;
+    --warn:#8a5a00; --warn-bg:#fff6e0;
+    --radius:16px; --shadow:0 10px 30px rgba(14,40,26,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e1512; --card:#151d19; --ink:#e9f2ec; --muted:#9db0a5;
+      --line:#26332c; --primary:#57c98d; --primary-2:#7ee0a8; --primary-soft:#14301f;
+      --accent:#b79bfb; --accent-soft:#241a44;
+      --ok:#6fe0a3; --ok-bg:#10291c; --ok-line:#1e4a32;
+      --ko:#ff9a92; --ko-bg:#2e1614; --ko-line:#5a2b27;
+      --warn:#f0c265; --warn-bg:#2b2312;
+      --shadow:0 10px 30px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Raleway',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    font-size:16px; line-height:1.5;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:18px 16px 32px}
+
+  /* ---------- En-tête ---------- */
+  .hero{
+    display:flex; align-items:center; gap:16px; justify-content:space-between;
+    background:linear-gradient(135deg,var(--primary),var(--accent));
+    color:#fff; border-radius:var(--radius); padding:18px 20px; box-shadow:var(--shadow);
+  }
+  .hero h1{margin:0;font-size:1.35rem;letter-spacing:.3px}
+  .hero p{margin:4px 0 0;font-size:.85rem;opacity:.9}
+  .hero-score{text-align:center;background:rgba(255,255,255,.16);border-radius:14px;padding:8px 16px;min-width:86px}
+  .hero-score b{display:block;font-size:1.7rem;line-height:1}
+  .hero-score small{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;opacity:.9}
+
+  /* ---------- Barre de mode ---------- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:16px 0 10px}
+  .modes{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px}
+  .modes button{
+    border:0;background:transparent;color:var(--muted);font:inherit;font-size:.9rem;font-weight:600;
+    padding:8px 16px;border-radius:999px;cursor:pointer;transition:.2s;white-space:nowrap;
+  }
+  .modes button:hover{color:var(--ink)}
+  .modes button.active{background:var(--primary);color:#fff}
+  .stats{display:flex;gap:14px;align-items:center;font-size:.82rem;color:var(--muted);font-weight:600}
+  .stats .dot{width:5px;height:5px;border-radius:50%;background:var(--line);display:inline-block}
+  #btnReset{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:6px 12px;font:inherit;font-size:.78rem;cursor:pointer}
+  #btnReset:hover{color:var(--ink);border-color:var(--muted)}
+
+  .progress{height:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-bottom:16px}
+  #progressFill{height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--accent));transition:width .35s ease}
+
+  /* ---------- Carte question ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+  .qkind{
+    display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:4px 12px;margin-bottom:14px;
+  }
+  .prompt{font-size:1.18rem;font-weight:600}
+  .prompt .val{
+    display:inline-block;background:var(--primary-soft);color:var(--primary-2);
+    border-radius:10px;padding:2px 10px;font-weight:800;font-variant-numeric:tabular-nums;
+  }
+  .prompt .sub{display:block;font-weight:500;color:var(--muted);font-size:.9rem;margin-top:6px}
+
+  .answer-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px}
+  input[type=text]{
+    flex:1 1 220px;min-width:160px;padding:14px 16px;font:inherit;font-size:1.15rem;
+    font-variant-numeric:tabular-nums;color:var(--ink);background:var(--bg);
+    border:2px solid var(--line);border-radius:12px;outline:none;transition:.2s;
+  }
+  input[type=text]:focus{border-color:var(--primary);background:var(--card)}
+  input[type=text].ko{border-color:var(--ko)}
+  input[type=text].ok{border-color:var(--ok)}
+  .unit{font-weight:800;color:var(--muted);font-size:1.05rem;min-width:34px}
+
+  button.primary{
+    border:0;background:var(--primary);color:#fff;font:inherit;font-weight:700;cursor:pointer;
+    padding:14px 22px;border-radius:12px;transition:.2s;font-size:.95rem;
+  }
+  button.primary:hover{background:var(--primary-2)}
+  button.ghost{
+    border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-weight:600;
+    cursor:pointer;padding:10px 16px;border-radius:12px;font-size:.85rem;transition:.2s;
+  }
+  button.ghost:hover{color:var(--ink);border-color:var(--muted)}
+
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+  @media (max-width:620px){.choices{grid-template-columns:1fr}}
+  .choices button{
+    text-align:left;padding:16px;font:inherit;font-size:1.02rem;font-weight:600;color:var(--ink);
+    background:var(--bg);border:2px solid var(--line);border-radius:12px;cursor:pointer;transition:.18s;
+    font-variant-numeric:tabular-nums;
+  }
+  .choices button:hover{border-color:var(--primary);background:var(--primary-soft)}
+  .choices button.ok{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+  .choices button.ko{border-color:var(--ko);background:var(--ko-bg);color:var(--ko)}
+  .choices button:disabled{cursor:default;opacity:.55}
+  .choices button.ok:disabled,.choices button.ko:disabled{opacity:1}
+
+  .actions{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
+  .hint{margin-top:14px;background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bg);
+    border-radius:12px;padding:12px 16px;font-size:.9rem}
+  .feedback{display:none;margin-top:16px;border-radius:12px;padding:14px 16px;border:1px solid var(--line);font-size:.95rem}
+  .feedback.show{display:block}
+  .feedback.good{background:var(--ok-bg);border-color:var(--ok-line)}
+  .feedback.bad{background:var(--ko-bg);border-color:var(--ko-line)}
+  .feedback .title{font-weight:800;display:block;margin-bottom:6px}
+  .feedback.good .title{color:var(--ok)}
+  .feedback.bad .title{color:var(--ko)}
+  .steps{margin:8px 0 0;padding-left:20px}
+  .steps li{margin:4px 0}
+  .tip{margin:8px 0 0;font-style:italic;color:var(--muted)}
+  .help{margin:10px 0 0;font-size:.8rem;color:var(--muted)}
+  .help code{background:var(--primary-soft);color:var(--primary-2);border-radius:5px;padding:1px 5px;font-size:.85em}
+  sup{font-size:.72em}
+
+  /* ---------- Mémo ---------- */
+  .memo h2{font-size:1.05rem;margin:26px 0 10px}
+  .memo h2:first-child{margin-top:4px}
+  .memo table{width:100%;border-collapse:collapse;font-size:.88rem;background:var(--card);border-radius:12px;overflow:hidden}
+  .memo th,.memo td{border:1px solid var(--line);padding:8px 12px;text-align:left}
+  .memo th{background:var(--primary-soft);color:var(--primary-2);font-weight:700}
+  .memo td:first-child{font-weight:700}
+  .memo ol,.memo ul{padding-left:22px}
+  .memo li{margin:6px 0}
+  .memo .ex{background:var(--card);border-left:4px solid var(--primary);border-radius:0 12px 12px 0;padding:12px 16px;margin:10px 0}
+  .memo .trap{background:var(--ko-bg);border-left:4px solid var(--ko);border-radius:0 12px 12px 0;padding:12px 16px;margin:10px 0}
+
+  /* ---------- Écran de fin ---------- */
+  .end{text-align:center;padding:10px 0}
+  .end .note{font-size:3.4rem;font-weight:800;line-height:1;color:var(--primary);margin:10px 0 4px}
+  .end .appr{color:var(--muted);font-style:italic;margin-bottom:6px}
+  .end .meta{font-size:.85rem;color:var(--muted);margin-bottom:18px}
+  .recap{text-align:left;margin:18px 0 0}
+  .recap h3{font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 8px}
+  .recap ul{list-style:none;padding:0;margin:0;font-size:.9rem}
+  .recap li{border-left:3px solid var(--ko);background:var(--ko-bg);border-radius:0 10px 10px 0;padding:8px 12px;margin-bottom:7px}
+
+  .footer-note{margin-top:16px;font-size:.78rem;color:var(--muted);text-align:center}
+  kbd{background:var(--card);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:.85em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <h1>Conversions et puissances de dix</h1>
+      <p>STI2D — Première · longueurs, aires, volumes, masses, temps, énergie, électricité, pression…</p>
+    </div>
+    <div class="hero-score">
+      <b id="scoreVal">0</b>
+      <small id="scoreLbl">points</small>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="modes" role="tablist" aria-label="Modes d'entraînement">
+      <button class="mode-btn active" data-mode="entrainement" role="tab">Entraînement</button>
+      <button class="mode-btn" data-mode="defi" role="tab">Défi · 10 questions</button>
+      <button class="mode-btn" data-mode="memo" role="tab">Mémo</button>
+    </div>
+    <div class="stats">
+      <span id="statQ">Question 1</span>
+      <span class="dot"></span>
+      <span id="statStreak">Série : 0</span>
+      <button id="btnReset" type="button">↺ Recommencer</button>
+    </div>
+  </div>
+
+  <div class="progress" id="progressWrap"><div id="progressFill"></div></div>
+
+  <main id="cardZone"></main>
+
+  <p class="footer-note">Touche <kbd>Entrée</kbd> : valider la réponse, puis passer à la question suivante.</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+     1. DONNÉES
+     Chaque famille : unité de base + liste [unité, puissance de dix]
+     La puissance est celle de l'unité par rapport à l'unité de base.
+     exp = 2 pour les aires, 3 pour les volumes (les puissances sont alors
+     doublées / triplées par rapport aux longueurs).
+     ===================================================================== */
+  var FAMILIES = [
+    { id:'longueur',  label:'Longueur',  base:'m',  units:[['km',3],['m',0],['dm',-1],['cm',-2],['mm',-3],['µm',-6],['nm',-9]] },
+    { id:'masse',     label:'Masse',     base:'g',  units:[['t',6],['kg',3],['g',0],['mg',-3],['µg',-6]] },
+    { id:'volume',    label:'Volume (litres)', base:'L', units:[['m³',3],['hL',2],['L',0],['dm³',0],['dL',-1],['cL',-2],['mL',-3],['cm³',-3]] },
+    { id:'aire',      label:'Aire',      base:'m²', exp:2, units:[['km²',6],['m²',0],['dm²',-2],['cm²',-4],['mm²',-6]] },
+    { id:'volume_cube', label:'Volume (m³)', base:'m³', exp:3, units:[['m³',0],['dm³',-3],['cm³',-6],['mm³',-9]] },
+    { id:'temps',     label:'Temps',     base:'s',  units:[['s',0],['ms',-3],['µs',-6],['ns',-9]] },
+    { id:'energie',   label:'Énergie',   base:'J',  units:[['MJ',6],['kJ',3],['J',0],['mJ',-3]] },
+    { id:'puissance', label:'Puissance', base:'W',  units:[['MW',6],['kW',3],['W',0],['mW',-3]] },
+    { id:'tension',   label:'Tension',   base:'V',  units:[['kV',3],['V',0],['mV',-3]] },
+    { id:'intensite', label:'Intensité', base:'A',  units:[['A',0],['mA',-3],['µA',-6]] },
+    { id:'frequence', label:'Fréquence', base:'Hz', units:[['GHz',9],['MHz',6],['kHz',3],['Hz',0]] },
+    { id:'pression',  label:'Pression',  base:'Pa', units:[['MPa',6],['kPa',3],['hPa',2],['Pa',0]] }
+  ];
+
+  /* Valeurs "propres" utilisées pour construire les questions */
+  var NICE = [0.25,0.45,1.2,1.5,2.5,3.5,4.2,4.5,6.8,7.2,8.5,9.6,12,15,18,25,32,45,56,75,120,150,215,250,320,375,420,500,750,940];
+
+  var POW_NAME = {'-12':'pico','-9':'nano','-6':'micro','-3':'milli','-2':'centi','-1':'déci','2':'hecto','3':'kilo','6':'méga','9':'giga','12':'téra'};
+
+  var SUP = {'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁻':'-','⁺':'+'};
+
+  /* Suffixes d'unités acceptés dans une réponse écrite (les plus longs en premier).
+     On accepte aussi les carrés/cubes écrits avec un chiffre : cm2, mm3. */
+  var UNIT_SUFFIX = /(km³|hm³|dam³|dm³|cm³|mm³|µm³|μm³|um³|m³|km²|hm²|dam²|dm²|cm²|mm²|µm²|μm²|um²|m²|km3|hm3|dam3|dm3|cm3|mm3|µm3|μm3|um3|m3|km2|hm2|dam2|dm2|cm2|mm2|µm2|μm2|um2|m2|dam|km|hm|mm|cm|dm|µm|μm|um|nm|pm|ml|cl|dl|hl|ms|µs|us|ns|kg|mg|µg|ug|mj|kj|mw|kw|gw|kv|mv|ma|µa|ghz|mhz|khz|min|mpa|kpa|hpa|pa|hz|t|m|g|l|s|j|w|v|a)\s*$/;
+
+  /* =====================================================================
+     2. OUTILS NUMÉRIQUES ET DE FORMATAGE
+     ===================================================================== */
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  /* Limite les erreurs d'arrondi des flottants (0,45 × 1000 = 450,00000000000006) */
+  function clean(x) {
+    if (!isFinite(x)) return x;
+    if (x === 0) return 0;
+    return Number(x.toPrecision(12));
+  }
+  /* "1e-12" -> "0.000000000001" */
+  function expandExp(s) {
+    var m = String(s).match(/^(-?)(\d+(?:\.\d+)?)e([+-]?\d+)$/);
+    if (!m) return String(s);
+    var sign = m[1], mant = m[2], exp = parseInt(m[3], 10);
+    var parts = mant.split('.');
+    var intPart = parts[0], frac = parts[1] || '';
+    var digits = intPart + frac;
+    var pointPos = intPart.length + exp;
+    var out;
+    if (pointPos <= 0) out = '0.' + new Array(-pointPos + 1).join('0') + digits;
+    else if (pointPos >= digits.length) out = digits + new Array(pointPos - digits.length + 1).join('0');
+    else out = digits.slice(0, pointPos) + '.' + digits.slice(pointPos);
+    return sign + out;
+  }
+  /* Affichage français : 3 500 | 0,45 | 0,0000035 */
+  function decFR(x) {
+    var s = expandExp(clean(x));
+    var neg = s.charAt(0) === '-';
+    if (neg) s = s.slice(1);
+    var parts = s.split('.');
+    var intPart = parts[0];
+    var frac = (parts[1] || '').replace(/0+$/, '');
+    var grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
+    return (neg ? '-' : '') + grouped + (frac ? ',' + frac : '');
+  }
+  /* [mantisse, exposant] de l'écriture scientifique */
+  function sciParts(x) {
+    if (x === 0) return [0, 0];
+    var e = Math.floor(Math.log10(Math.abs(x)) + 1e-12);
+    return [clean(x / Math.pow(10, e)), e];
+  }
+  function sciHTML(x) {
+    var p = sciParts(x);
+    return decFR(p[0]) + ' × 10<sup>' + p[1] + '</sup>';
+  }
+  /* Comparaison numérique : tolérance relative uniquement (pas de plancher absolu,
+     sinon 1,5.10-11 serait accepté à la place de 1,5.10-10). */
+  function eqNum(a, b) {
+    if (a === b) return true;
+    if (typeof a !== 'number' || typeof b !== 'number') return false;
+    if (!isFinite(a) || !isFinite(b)) return false;
+    var scale = Math.max(Math.abs(a), Math.abs(b));
+    if (scale === 0) return true;
+    return Math.abs(a - b) <= 1e-9 * scale;
+  }
+
+  /* =====================================================================
+     3. LECTURE D'UNE RÉPONSE ÉCRITE
+     Accepte : 450 | 0,45 | 4,5.10^3 | 4,5x10^3 | 4,5 × 10³ | 4.5e3 | 10^-3 | 450 mm
+     ===================================================================== */
+  function parseUserNumber(raw) {
+    if (raw === null || raw === undefined) return null;
+    var s = String(raw).toLowerCase().replace(/[\u00a0\u202f]/g, ' ').trim();
+    if (!s) return null;
+    /* Exposants en caractères "chics" : 10⁻³ -> 10^-3, 4,5e³ -> 4,5e3.
+       Attention : on ne touche pas aux ² et ³ des unités (cm², mm³). */
+    function supDigits(sup) {
+      return sup.split('').map(function (c) { return SUP[c] || ''; }).join('');
+    }
+    s = s.replace(/10([⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+)/g, function (all, sup) { return '10^' + supDigits(sup); });
+    s = s.replace(/([0-9.,])e([⁰¹²³⁴⁵⁶⁷⁸⁹⁻⁺]+)/g, function (all, pre, sup) { return pre + 'e' + supDigits(sup); });
+    /* on enlève une éventuelle unité écrite par l'élève */
+    s = s.replace(UNIT_SUFFIX, '');
+    s = s.replace(/,/g, '.');
+    s = s.replace(/[×x*·]/g, '×');
+    s = s.replace(/\s+/g, ' ').trim();
+    var m;
+    /* a × 10^n */
+    if ((m = s.match(/^([+-]?\d*\.?\d+)\s*×\s*10\s*\^?\s*\(?\s*([+-]?\d+)\s*\)?$/)))
+      return Number(m[1]) * Math.pow(10, Number(m[2]));
+    /* a 10^n  ou  a.10^n */
+    if ((m = s.match(/^([+-]?\d*\.?\d+)\s*\.?\s*10\s*\^?\s*\(?\s*([+-]?\d+)\s*\)?$/)))
+      return Number(m[1]) * Math.pow(10, Number(m[2]));
+    /* aEn */
+    if ((m = s.match(/^([+-]?\d*\.?\d+)\s*e\s*([+-]?\d+)$/)))
+      return Number(m[1]) * Math.pow(10, Number(m[2]));
+    /* 10^n */
+    if ((m = s.match(/^10\s*\^\s*\(?\s*([+-]?\d+)\s*\)?$/)))
+      return Math.pow(10, Number(m[1]));
+    /* nombre simple */
+    var t = s.replace(/\s/g, '');
+    if (/^[+-]?(\d+\.?\d*|\.\d+)$/.test(t)) return Number(t);
+    return null;
+  }
+
+  /* =====================================================================
+     4. GÉNÉRATEURS DE QUESTIONS
+     ===================================================================== */
+  function pickPair(fam) {
+    for (var i = 0; i < 400; i++) {
+      var a = pick(fam.units), b = pick(fam.units);
+      if (a[0] === b[0]) continue;
+      var d = a[1] - b[1];
+      if (d === 0) continue;
+      return { from: a[0], pFrom: a[1], to: b[0], pTo: b[1], d: d };
+    }
+    return null;
+  }
+
+  /* Choisit une valeur de départ qui donne un résultat d'ordre de grandeur raisonnable */
+  function pickValue(d) {
+    for (var i = 0; i < 60; i++) {
+      var v = pick(NICE);
+      var a = Math.abs(v * Math.pow(10, d));
+      if (a >= 1e-7 && a <= 1e10) return v;
+    }
+    return pick(NICE);
+  }
+
+  function explainConvert(q) {
+    var li = [];
+    var rel = [];
+    if (q.pFrom !== 0) rel.push('1 ' + q.from + ' = 10<sup>' + q.pFrom + '</sup> ' + q.fam.base);
+    if (q.pTo !== 0) rel.push('1 ' + q.to + ' = 10<sup>' + q.pTo + '</sup> ' + q.fam.base);
+    if (rel.length) li.push(rel.join(' &nbsp;et&nbsp; '));
+    else li.push('Les deux unités sont celles de référence (' + q.fam.base + ').');
+    li.push('Donc 1 ' + q.from + ' = 10<sup>' + q.d + '</sup> ' + q.to);
+    li.push(decFR(q.value) + ' ' + q.from + ' = ' + decFR(q.value) + ' × 10<sup>' + q.d + '</sup> ' + q.to +
+            ' = <b>' + decFR(q.answer) + ' ' + q.to + '</b>');
+    return '<ul class="steps">' + li.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>' +
+      '<p class="tip">On décale la virgule de ' + Math.abs(q.d) + ' rang' + (Math.abs(q.d) > 1 ? 's' : '') +
+      ' vers la ' + (q.d > 0 ? 'droite' : 'gauche') + '.' + aireVolumeTip(q) + '</p>';
+  }
+
+  /* Rappel spécifique aux unités au carré et au cube */
+  function aireVolumeTip(q) {
+    var fam = q.fam;
+    if (fam.exp === 2) return ' C\'est une <b>aire</b> : l\'écart entre deux unités voisines est de 10<sup>2</sup>, pas de 10.';
+    if (fam.exp === 3) return ' C\'est un <b>volume</b> : l\'écart entre deux unités voisines est de 10<sup>3</sup>, pas de 10.';
+    if (/³/.test(q.from) || /³/.test(q.to))
+      return ' Attention : le pas entre deux unités au cube est de 10<sup>3</sup> (m³ → dm³ → cm³), et 1 m³ = 1 000 L.';
+    return '';
+  }
+
+  /* --- Type 1 : conversion à saisir --- */
+  function buildConvert(fam) {
+    var p = pickPair(fam);
+    if (!p) return null;
+    var value = pickValue(p.d);
+    var answer = clean(value * Math.pow(10, p.d));
+    var q = {
+      kind: 'convert',
+      familyLabel: fam.label,
+      fam: fam, from: p.from, to: p.to, pFrom: p.pFrom, pTo: p.pTo, d: p.d,
+      value: value, answer: answer,
+      input: true,
+      prompt: 'Convertir <span class="val">' + decFR(value) + ' ' + p.from + '</span>' +
+              ' en <span class="val">' + p.to + '</span>' +
+              '<span class="sub">Réponds par un nombre, avec ou sans unité.</span>',
+      hint: 'Repère la puissance de dix de chaque unité par rapport au ' + fam.base +
+            ' : 1 ' + p.from + ' = 10<sup>' + p.pFrom + '</sup> ' + fam.base +
+            ' et 1 ' + p.to + ' = 10<sup>' + p.pTo + '</sup> ' + fam.base + '.'
+    };
+    q.key = 'convert|' + fam.id + '|' + p.from + '|' + p.to + '|' + value;
+    q.badge = 'Conversion';
+    q.recap = 'Convertir ' + decFR(value) + ' ' + p.from + ' → ' + decFR(answer) + ' ' + p.to;
+    q.explain = explainConvert(q);
+    return q;
+  }
+
+  /* --- Type 2 : quelle égalité est correcte ? (QCM) --- */
+  function buildEqual(fam) {
+    var p = pickPair(fam);
+    if (!p) return null;
+    var value = pickValue(p.d);
+    var answer = clean(value * Math.pow(10, p.d));
+    var right = decFR(value) + ' ' + p.from + ' = ' + decFR(answer) + ' ' + p.to;
+    var raw = [
+      decFR(clean(value * Math.pow(10, p.d + 1))) + ' ' + p.to,
+      decFR(clean(value * Math.pow(10, p.d - 1))) + ' ' + p.to,
+      decFR(clean(value * Math.pow(10, -p.d))) + ' ' + p.to,
+      decFR(value) + ' ' + p.to
+    ];
+    var seen = {};
+    seen[right] = true;
+    var wrong = [];
+    shuffle(raw).forEach(function (tail) {
+      var opt = decFR(value) + ' ' + p.from + ' = ' + tail;
+      if (!seen[opt] && wrong.length < 3) { seen[opt] = true; wrong.push(opt); }
+    });
+    if (wrong.length < 3) return null;
+
+    var choices = [{ html: right, ok: true, value: answer }].concat(wrong.map(function (w) {
+      return { html: w, ok: false, value: null };
+    }));
+
+    var q = {
+      kind: 'equal',
+      familyLabel: fam.label,
+      fam: fam, from: p.from, to: p.to, pFrom: p.pFrom, pTo: p.pTo, d: p.d,
+      value: value, answer: answer,
+      input: false,
+      prompt: 'Quelle égalité est <b>correcte</b> ?' +
+              '<span class="sub">Grandeur : ' + fam.label.toLowerCase() + '.</span>',
+      hint: 'Compare les puissances : 1 ' + p.from + ' = 10<sup>' + p.d + '</sup> ' + p.to +
+            '. Vérifie ensuite le nombre de rangs de décalage de la virgule.'
+    };
+    q.key = 'equal|' + fam.id + '|' + p.from + '|' + p.to + '|' + value;
+    q.badge = 'QCM · égalité';
+    q.recap = 'Convertir ' + decFR(value) + ' ' + p.from + ' → ' + decFR(answer) + ' ' + p.to;
+    q.explain = explainConvert(q);
+    q.choices = shuffle(choices);
+    return q;
+  }
+
+  /* --- Type 3 : écriture scientifique (QCM) --- */
+  function buildSci(fam) {
+    var masks = [0.5, 0.8, 1.2, 1.5, 2.4, 3.5, 4.6, 5.5, 6.4, 7.5, 8.5, 9.2];
+    var exps = [-9, -6, -5, -4, -3, 3, 4, 5, 6, 7];
+    for (var t = 0; t < 60; t++) {
+      var str = null;
+      /* on tire une unité dont l'ordre de grandeur rend l'exercice "naturel" */
+      var u = pick(fam.units);
+      var mant = pick(masks);
+      var e = pick(exps);
+      str = clean(mant * Math.pow(10, e));
+      if (str === 0) continue;
+
+      var good = sciHTML(str);
+      var cands = [
+        sciHTML(clean(mant * Math.pow(10, e + 1))),
+        sciHTML(clean(mant * Math.pow(10, e - 1))),
+        sciHTML(clean((mant + 1.3) * Math.pow(10, e)))
+      ];
+      var seen = {}; seen[good] = true;
+      var wrong = [];
+      cands.forEach(function (c) {
+        if (!seen[c] && wrong.length < 3) { seen[c] = true; wrong.push(c); }
+      });
+      if (wrong.length < 3) continue;
+
+      var choices = [{ html: good, ok: true, value: str }].concat(wrong.map(function (w) {
+        return { html: w, ok: false, value: null };
+      }));
+
+      var q = {
+        kind: 'sci',
+        familyLabel: fam.label,
+        fam: fam, from: u[0], to: u[0], pFrom: u[1], pTo: u[1], d: 0,
+        value: str, answer: str,
+        input: false,
+        prompt: 'Quelle est l\'écriture scientifique de <span class="val">' + decFR(str) + ' ' + u[0] + '</span> ?' +
+                '<span class="sub">Rappel : a × 10<sup>n</sup> avec 1 ≤ a &lt; 10.</span>',
+        hint: 'Compte le nombre de rangs dont il faut décaler la virgule pour obtenir un nombre entre 1 et 10.'
+      };
+      q.key = 'sci|' + fam.id + '|' + u[0] + '|' + str;
+      q.badge = 'Écriture scientifique';
+      q.recap = 'Écriture scientifique de ' + decFR(str) + ' ' + u[0] + ' (' + sciHTML(str) + ')';
+      q.explain = '<ul class="steps">' +
+        '<li>On décale la virgule pour obtenir un nombre entre 1 et 10 : ' + decFR(str) + ' → ' + decFR(sciParts(str)[0]) + '</li>' +
+        '<li>Le nombre de rangs donne l\'exposant : <b>' + sciParts(str)[1] + '</b></li>' +
+        '<li>Résultat : <b>' + sciHTML(str) + ' ' + u[0] + '</b></li></ul>';
+      q.choices = shuffle(choices);
+      return q;
+    }
+    return null;
+  }
+
+  /* --- Type 4 : préfixe ⇄ puissance de dix (QCM) --- */
+  /* Préfixes réellement utilisés (on évite les leurres 10^4 ou 10^5, qui n'existent pas) */
+  var REAL_POWERS = [-12, -9, -6, -3, -2, -1, 0, 2, 3, 6, 9, 12];
+
+  function prefixOf(unit, fam) {
+    if (fam.base && unit.length > fam.base.length && unit.slice(-fam.base.length) === fam.base)
+      return unit.slice(0, unit.length - fam.base.length);
+    return '';
+  }
+
+  function buildPower(fam) {
+    var usable = fam.units.filter(function (u) { return u[1] !== 0; });
+    if (!usable.length) return null;
+    var u = pick(usable);
+    var p = u[1];
+    var good = '10<sup>' + p + '</sup>';
+    var seen = {}; seen[good] = true;
+    var wrong = [];
+    [p + 1, p - 1, -p].forEach(function (v) {
+      if (v !== p && REAL_POWERS.indexOf(v) >= 0 && !seen[v]) { seen[v] = true; wrong.push('10<sup>' + v + '</sup>'); }
+    });
+    while (wrong.length < 3) {
+      var r = pick(REAL_POWERS);
+      if (r !== p && !seen[r]) { seen[r] = true; wrong.push('10<sup>' + r + '</sup>'); }
+    }
+    wrong = shuffle(wrong).slice(0, 3);
+
+    var prefix = prefixOf(u[0], fam);
+    var direction = p > 0
+      ? 'multiplie l\'unité de référence : 1 ' + u[0] + ' est plus grand que 1 ' + fam.base + '.'
+      : 'divise l\'unité de référence : 1 ' + u[0] + ' est plus petit que 1 ' + fam.base + '.';
+
+    /* Explication adaptée aux unités au carré et au cube */
+    var steps = [];
+    if (prefix && fam.exp > 1) {
+      var pl = p / fam.exp;
+      steps.push('Le préfixe ' + (POW_NAME[String(pl)] || '') + ' vaut 10<sup>' + pl + '</sup> pour une longueur.');
+      steps.push('Comme l\'unité est ' + (fam.exp === 2 ? 'au carré' : 'au cube') + ', on élève aussi la puissance : ' +
+                 '(10<sup>' + pl + '</sup>)' + (fam.exp === 2 ? '²' : '³') + ' = 10<sup>' + p + '</sup>.');
+    } else if (prefix) {
+      steps.push('Le préfixe ' + (POW_NAME[String(p)] || '') + ' signifie 10<sup>' + p + '</sup>.');
+    } else {
+      steps.push('Cette unité n\'a pas de préfixe : c\'est une relation à connaître, à relier au ' + fam.base + '.');
+    }
+    steps.push('Donc 1 ' + u[0] + ' = <b>10<sup>' + p + '</sup> ' + fam.base + '</b>.');
+
+    var choices = [{ html: good, ok: true, value: Math.pow(10, p) }].concat(wrong.map(function (w) {
+      return { html: w, ok: false, value: null };
+    }));
+
+    return {
+      kind: 'power',
+      familyLabel: fam.label,
+      fam: fam, from: u[0], to: fam.base, pFrom: p, pTo: 0, d: p,
+      value: 1, answer: Math.pow(10, p),
+      input: false,
+      prompt: 'Complète : <span class="val">1 ' + u[0] + '</span> = …… <span class="val">' + fam.base + '</span>' +
+              '<span class="sub">Le préfixe de « ' + u[0] + ' » correspond à quelle puissance de dix ?</span>',
+      hint: (prefix ? 'Le préfixe « ' + prefix + ' » ' : 'Cette unité ') + direction +
+            (fam.exp > 1 ? ' Attention : l\'unité est ' + (fam.exp === 2 ? 'au carré' : 'au cube') +
+              ', la puissance du préfixe est donc ' + (fam.exp === 2 ? 'doublée' : 'triplée') + '.' : '') +
+            ' Regarde le tableau des préfixes dans le Mémo.',
+      key: 'power|' + fam.id + '|' + u[0],
+      badge: 'Préfixe · puissance',
+      recap: '1 ' + u[0] + ' = 10<sup>' + p + '</sup> ' + fam.base,
+      explain: '<ul class="steps">' + steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ul>',
+      choices: shuffle(choices)
+    };
+  }
+
+  /* =====================================================================
+     5. ÉTAT ET MOTEUR
+     ===================================================================== */
+  var state = {
+    mode: 'entrainement',
+    total: Infinity,
+    index: 0,
+    correct: 0,
+    score: 0,
+    streak: 0,
+    best: 0,
+    asked: {},
+    errors: [],
+    question: null,
+    answered: false,
+    hinted: false,
+    startedAt: null
+  };
+
+  var el = {
+    card: document.getElementById('cardZone'),
+    score: document.getElementById('scoreVal'),
+    scoreLbl: document.getElementById('scoreLbl'),
+    statQ: document.getElementById('statQ'),
+    statStreak: document.getElementById('statStreak'),
+    fill: document.getElementById('progressFill'),
+    progressWrap: document.getElementById('progressWrap'),
+    reset: document.getElementById('btnReset')
+  };
+
+  function pickBuilder() {
+    var r = Math.random();
+    if (r < 0.50) return buildConvert;
+    if (r < 0.72) return buildEqual;
+    if (r < 0.87) return buildSci;
+    return buildPower;
+  }
+
+  function newQuestion() {
+    for (var i = 0; i < 80; i++) {
+      var fam = pick(FAMILIES);
+      var q = pickBuilder()(fam);
+      if (!q) continue;
+      if (state.asked[q.key]) continue;
+      state.asked[q.key] = true;
+      return q;
+    }
+    return buildConvert(pick(FAMILIES));
+  }
+
+  function updateStats() {
+    el.score.textContent = state.score;
+    el.scoreLbl.textContent = state.mode === 'defi' ? 'note sur 20' : 'points';
+    el.statStreak.textContent = 'Série : ' + state.streak + (state.best > 0 ? ' (record ' + state.best + ')' : '');
+    if (state.mode === 'defi') {
+      el.statQ.textContent = 'Question ' + Math.min(state.index + 1, state.total) + ' / ' + state.total;
+    } else {
+      el.statQ.textContent = 'Question ' + (state.index + 1);
+    }
+    el.progressWrap.style.visibility = state.mode === 'defi' ? 'visible' : 'hidden';
+    el.fill.style.width = state.mode === 'defi'
+      ? Math.min(100, (state.index / state.total) * 100) + '%'
+      : '0%';
+  }
+
+  function renderQuestion() {
+    var q = state.question;
+    state.answered = false;
+    state.hinted = false;
+    updateStats();
+
+    var html = '';
+    html += '<section class="card">';
+    html += '<span class="qkind">' + q.badge + ' · ' + q.familyLabel + '</span>';
+    html += '<div class="prompt">' + q.prompt + '</div>';
+
+    if (q.input) {
+      html += '<div class="answer-row">' +
+        '<input id="ansInput" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" ' +
+        'placeholder="ex. 45  ou  4,5.10^1" aria-label="Réponse">' +
+        '<span class="unit">' + q.to + '</span>' +
+        '<button class="primary" id="btnValidate" type="button">Valider</button>' +
+        '</div>' +
+        '<p class="help">Écritures acceptées : <code>450</code> · <code>0,45</code> · <code>4,5.10^3</code> · <code>4,5e3</code> · <code>4,5 × 10³</code></p>';
+    } else {
+      html += '<div class="choices" id="choices">' + q.choices.map(function (c, i) {
+        return '<button type="button" data-i="' + i + '">' + c.html + '</button>';
+      }).join('') + '</div>';
+    }
+
+    html += '<div class="actions">' +
+      '<button class="ghost" id="btnHint" type="button">💡 Indice</button>' +
+      '<button class="primary" id="btnNext" type="button" style="display:none">Question suivante ▶</button>' +
+      '</div>';
+    html += '<div class="hint" id="hintZone" style="display:none"></div>';
+    html += '<div class="feedback" id="feedback" aria-live="polite"></div>';
+    html += '</section>';
+
+    el.card.innerHTML = html;
+
+    var input = document.getElementById('ansInput');
+    if (input) {
+      input.focus();
+      input.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          if (!state.answered) submitText();
+          else nextQuestion();
+        }
+      });
+      document.getElementById('btnValidate').addEventListener('click', submitText);
+    } else {
+      var zone = document.getElementById('choices');
+      zone.addEventListener('click', function (ev) {
+        var btn = ev.target.closest('button[data-i]');
+        if (btn && !state.answered) submitChoice(Number(btn.getAttribute('data-i')));
+      });
+    }
+
+    document.getElementById('btnHint').addEventListener('click', function () {
+      var h = document.getElementById('hintZone');
+      h.innerHTML = '<b>Indice —</b> ' + q.hint;
+      h.style.display = 'block';
+      state.hinted = true;
+      this.disabled = true;
+      this.style.opacity = .5;
+      scheduleResize();
+    });
+
+    document.getElementById('btnNext').addEventListener('click', nextQuestion);
+    scheduleResize();
+  }
+
+  function submitText() {
+    var input = document.getElementById('ansInput');
+    var val = parseUserNumber(input.value);
+    if (val === null) {
+      var fb = document.getElementById('feedback');
+      fb.className = 'feedback bad show';
+      fb.innerHTML = '<span class="title">Je n\'arrive pas à lire cette réponse.</span>' +
+        'Écris un nombre simple (<b>450</b>), décimal (<b>0,45</b>) ou en puissance de dix (<b>4,5.10^3</b> ou <b>4,5e3</b>).';
+      scheduleResize();
+      return;
+    }
+    finish(eqNum(val, state.question.answer), input);
+  }
+
+  function submitChoice(i) {
+    var q = state.question;
+    var ok = q.choices[i].ok;
+    var buttons = document.querySelectorAll('#choices button');
+    buttons.forEach(function (b, k) {
+      b.disabled = true;
+      if (q.choices[k].ok) b.classList.add('ok');
+      else if (k === i) b.classList.add('ko');
+    });
+    finish(ok, null);
+  }
+
+  function finish(ok, input) {
+    if (state.answered) return;
+    state.answered = true;
+    var q = state.question;
+
+    if (ok) {
+      state.correct++;
+      state.score += state.mode === 'defi' ? 2 : 1;
+      state.streak++;
+      if (state.streak > state.best) state.best = state.streak;
+    } else {
+      state.streak = 0;
+      state.errors.push(q.recap);
+    }
+    updateStats();
+
+    if (input) {
+      input.classList.add(ok ? 'ok' : 'ko');
+      input.readOnly = true;
+    }
+    var btnValidate = document.getElementById('btnValidate');
+    if (btnValidate) btnValidate.style.display = 'none';
+
+    var fb = document.getElementById('feedback');
+    fb.className = 'feedback show ' + (ok ? 'good' : 'bad');
+    var head = ok
+      ? '<span class="title">✅ Correct !' + (state.hinted ? ' (avec indice)' : '') + '</span>'
+      : '<span class="title">❌ Réponse : ' + decFR(q.answer) + ' ' + q.to + '</span>';
+    fb.innerHTML = head + q.explain;
+
+    var next = document.getElementById('btnNext');
+    next.style.display = 'inline-block';
+    next.textContent = (state.mode === 'defi' && state.index + 1 >= state.total)
+      ? 'Voir le résultat 🏁' : 'Question suivante ▶';
+    next.focus();
+
+    var hint = document.getElementById('hintZone');
+    if (hint) hint.style.display = 'none';
+    document.getElementById('btnHint').disabled = true;
+    document.getElementById('btnHint').style.opacity = .5;
+    scheduleResize();
+  }
+
+  function nextQuestion() {
+    state.index++;
+    if (state.mode === 'defi' && state.index >= state.total) { showEnd(); return; }
+    state.question = newQuestion();
+    renderQuestion();
+  }
+
+  function showEnd() {
+    updateStats();
+    el.fill.style.width = '100%';
+    var note = Math.round((state.correct / state.total) * 20);
+    var appr =
+      note === 20 ? 'Parfait ! Les puissances de dix n\'ont plus de secret.' :
+      note >= 16 ? 'Excellent travail !' :
+      note >= 14 ? 'Bien : encore quelques conversions à automatiser.' :
+      note >= 10 ? 'Moyen : revois la méthode en 3 étapes du Mémo.' :
+      'À consolider : reprends le Mémo puis refais un défi.';
+    var secs = state.startedAt ? Math.round((Date.now() - state.startedAt) / 1000) : 0;
+    var timeStr = Math.floor(secs / 60) + ' min ' + String(secs % 60).padStart(2, '0') + ' s';
+    var seen = {};
+    var recap = state.errors.filter(function (e) {
+      if (seen[e]) return false;
+      seen[e] = true;
+      return true;
+    }).slice(0, 6);
+
+    el.card.innerHTML = '<section class="card end">' +
+      '<span class="qkind">Défi terminé</span>' +
+      '<div class="note">' + note + ' / 20</div>' +
+      '<div class="appr">' + appr + '</div>' +
+      '<div class="meta">' + state.correct + ' / ' + state.total + ' bonnes réponses · temps : ' + timeStr +
+      ' · meilleure série : ' + state.best + '</div>' +
+      '<div class="actions" style="justify-content:center">' +
+      '<button class="primary" id="btnReplay" type="button">↻ Rejouer un défi</button>' +
+      '<button class="ghost" id="btnTrain" type="button">Entraînement libre</button>' +
+      '</div>' +
+      (recap.length ? '<div class="recap"><h3>À revoir</h3><ul>' +
+        recap.map(function (r) { return '<li>' + r + '</li>'; }).join('') + '</ul></div>' : '') +
+      '</section>';
+
+    document.getElementById('btnReplay').addEventListener('click', function () { start('defi'); });
+    document.getElementById('btnTrain').addEventListener('click', function () { start('entrainement'); });
+    scheduleResize();
+  }
+
+  /* =====================================================================
+     6. MÉMO
+     ===================================================================== */
+  function renderMemo() {
+    var rows = FAMILIES.map(function (f) {
+      var units = f.units.map(function (u) {
+        return u[0] + ' <span style="color:var(--muted)">(10<sup>' + u[1] + '</sup>)</span>';
+      }).join(' · ');
+      return '<tr><td>' + f.label + '</td><td>' + f.base + '</td><td>' + units + '</td></tr>';
+    }).join('');
+
+    el.card.innerHTML =
+      '<section class="card memo">' +
+      '<h2>La méthode en 3 étapes</h2>' +
+      '<ol>' +
+      '<li>J\'écris l\'unité de <b>départ</b> et l\'unité d\'<b>arrivée</b>.</li>' +
+      '<li>Je remplace chaque unité par sa puissance de dix par rapport à l\'unité de base.</li>' +
+      '<li>Je multiplie par 10<sup>(p<sub>départ</sub> − p<sub>arrivée</sub>)</sup> : c\'est un simple décalage de la virgule.</li>' +
+      '</ol>' +
+      '<div class="ex"><b>Exemple 1 —</b> 4,5 cm en mm : 1 cm = 10<sup>-2</sup> m et 1 mm = 10<sup>-3</sup> m, ' +
+      'donc 1 cm = 10<sup>1</sup> mm.<br>4,5 cm = 4,5 × 10<sup>1</sup> mm = <b>45 mm</b> (virgule décalée de 1 rang vers la droite).</div>' +
+      '<div class="ex"><b>Exemple 2 —</b> 0,0035 m en µm : 1 µm = 10<sup>-6</sup> m, ' +
+      'donc 1 m = 10<sup>6</sup> µm.<br>0,0035 m = 0,0035 × 10<sup>6</sup> = <b>3 500 µm</b> (6 rangs vers la droite).</div>' +
+      '<div class="ex"><b>Exemple 3 —</b> 250 mL en L : 1 mL = 10<sup>-3</sup> L.<br>' +
+      '250 mL = 250 × 10<sup>-3</sup> L = <b>0,25 L</b> (3 rangs vers la gauche).</div>' +
+
+      '<h2>Longueurs, aires, volumes : attention aux carrés et aux cubes</h2>' +
+      '<p>Pour une <b>aire</b> (m²), la puissance de dix est <b>doublée</b> par rapport aux longueurs ; ' +
+      'pour un <b>volume</b> (m³), elle est <b>triplée</b>.</p>' +
+      '<table>' +
+      '<tr><th>Préfixe</th><th>Longueur</th><th>Aire</th><th>Volume</th></tr>' +
+      '<tr><td>kilo (k)</td><td>1 km = 10<sup>3</sup> m</td><td>1 km² = 10<sup>6</sup> m²</td><td>1 km³ = 10<sup>9</sup> m³</td></tr>' +
+      '<tr><td>(unité)</td><td>1 m</td><td>1 m²</td><td>1 m³</td></tr>' +
+      '<tr><td>déci (d)</td><td>1 dm = 10<sup>-1</sup> m</td><td>1 dm² = 10<sup>-2</sup> m²</td><td>1 dm³ = 10<sup>-3</sup> m³</td></tr>' +
+      '<tr><td>centi (c)</td><td>1 cm = 10<sup>-2</sup> m</td><td>1 cm² = 10<sup>-4</sup> m²</td><td>1 cm³ = 10<sup>-6</sup> m³</td></tr>' +
+      '<tr><td>milli (m)</td><td>1 mm = 10<sup>-3</sup> m</td><td>1 mm² = 10<sup>-6</sup> m²</td><td>1 mm³ = 10<sup>-9</sup> m³</td></tr>' +
+      '</table>' +
+      '<div class="ex"><b>Exemple —</b> 12,5 cm² en m² : 1 cm² = 10<sup>-4</sup> m², ' +
+      'donc 12,5 cm² = 12,5 × 10<sup>-4</sup> m² = <b>0,00125 m²</b>.</div>' +
+      '<div class="ex"><b>Exemple —</b> 2,5 m³ en cm³ : 1 m³ = 10<sup>6</sup> cm³, ' +
+      'donc 2,5 m³ = <b>2 500 000 cm³</b>.</div>' +
+      '<div class="ex"><b>Exemple —</b> 0,75 L en cm³ : 1 L = 1 dm³ = 10<sup>3</sup> cm³, ' +
+      'donc 0,75 L = <b>750 cm³</b>.</div>' +
+
+      '<h2>Les préfixes à connaître</h2>' +
+      '<table>' +
+      '<tr><th>Préfixe</th><th>Symbole</th><th>Puissance</th><th>Exemple</th></tr>' +
+      '<tr><td>téra</td><td>T</td><td>10<sup>12</sup></td><td>1 TW</td></tr>' +
+      '<tr><td>giga</td><td>G</td><td>10<sup>9</sup></td><td>1 GHz</td></tr>' +
+      '<tr><td>méga</td><td>M</td><td>10<sup>6</sup></td><td>1 MPa</td></tr>' +
+      '<tr><td>kilo</td><td>k</td><td>10<sup>3</sup></td><td>1 km</td></tr>' +
+      '<tr><td>hecto</td><td>h</td><td>10<sup>2</sup></td><td>1 hPa</td></tr>' +
+      '<tr><td>—</td><td>—</td><td>10<sup>0</sup></td><td>1 m</td></tr>' +
+      '<tr><td>déci</td><td>d</td><td>10<sup>-1</sup></td><td>1 dm</td></tr>' +
+      '<tr><td>centi</td><td>c</td><td>10<sup>-2</sup></td><td>1 cm</td></tr>' +
+      '<tr><td>milli</td><td>m</td><td>10<sup>-3</sup></td><td>1 mm</td></tr>' +
+      '<tr><td>micro</td><td>µ</td><td>10<sup>-6</sup></td><td>1 µm</td></tr>' +
+      '<tr><td>nano</td><td>n</td><td>10<sup>-9</sup></td><td>1 ns</td></tr>' +
+      '<tr><td>pico</td><td>p</td><td>10<sup>-12</sup></td><td>1 pF</td></tr>' +
+      '</table>' +
+
+      '<h2>Les unités du programme</h2>' +
+      '<table><tr><th>Grandeur</th><th>Base</th><th>Unités usuelles (puissance par rapport à la base)</th></tr>' +
+      rows + '</table>' +
+
+      '<h2>Pièges fréquents</h2>' +
+      '<div class="trap"><b>Volumes :</b> 1 m³ = 1 000 L = 10<sup>3</sup> L (et non 100 L).<br>' +
+      '1 dm³ = 1 L &nbsp;·&nbsp; 1 cm³ = 1 mL.</div>' +
+      '<div class="trap"><b>Le symbole « m » est ambigu :</b> dans « mm » ou « mA », le m est le préfixe <i>milli</i> (10<sup>-3</sup>), ' +
+      'alors que « m » seul est le mètre.</div>' +
+      '<div class="trap"><b>Ordre de grandeur :</b> convertis dans l\'unité la plus « parlante » avant de conclure. ' +
+      '0,0035 m = 3 500 µm = 3,5 mm : on vérifie que le résultat est plausible.</div>' +
+      '</section>';
+    scheduleResize();
+  }
+
+  /* =====================================================================
+     7. DÉMARRAGE / CHANGEMENT DE MODE
+     ===================================================================== */
+  /* Ajuste automatiquement la hauteur de l'iframe qui contient l'exercice */
+  function notifyHeight() {
+    try {
+      if (window.parent === window) return;
+      window.parent.postMessage({
+        type: 'iframe-resize',
+        id: 'conversions',
+        height: document.body.scrollHeight
+      }, '*');
+    } catch (e) { /* ignoré */ }
+  }
+  var resizeTimer = null;
+  function scheduleResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(notifyHeight, 60);
+  }
+  window.addEventListener('resize', scheduleResize);
+  window.addEventListener('load', scheduleResize);
+
+  function start(mode) {
+    state.mode = mode;
+    state.total = mode === 'defi' ? 10 : Infinity;
+    state.index = 0;
+    state.correct = 0;
+    state.score = 0;
+    state.streak = 0;
+    state.best = 0;
+    state.asked = {};
+    state.errors = [];
+    state.startedAt = Date.now();
+    Array.prototype.forEach.call(document.querySelectorAll('.mode-btn'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+    });
+
+    if (mode === 'memo') {
+      el.statQ.textContent = 'Mémo';
+      el.statStreak.textContent = 'Méthode et tableaux';
+      el.progressWrap.style.visibility = 'hidden';
+      el.score.textContent = '0';
+      el.scoreLbl.textContent = 'points';
+      renderMemo();
+      return;
+    }
+    state.question = newQuestion();
+    renderQuestion();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.mode-btn'), function (b) {
+    b.addEventListener('click', function () { start(b.getAttribute('data-mode')); });
+  });
+  el.reset.addEventListener('click', function () { start(state.mode === 'memo' ? 'entrainement' : state.mode); });
+
+  start('entrainement');
+})();
+</script>
+</body>
+</html>
