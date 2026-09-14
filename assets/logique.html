@@ -1,0 +1,1248 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Logique combinatoire — STI2D</title>
+<style>
+  :root{
+    --bg:#f2f6f3; --card:#ffffff; --ink:#12211a; --muted:#5c6b63;
+    --line:#e1e8e3; --primary:#1c7a4c; --primary-2:#12603a; --primary-soft:#e8f5ee;
+    --accent:#6d28d9; --accent-soft:#f1ecfe;
+    --ok:#12743f; --ok-bg:#e6f7ec; --ok-line:#b7e3c6;
+    --ko:#a81818; --ko-bg:#fdeceb; --ko-line:#f4bcb8;
+    --warn:#8a5a00; --warn-bg:#fff6e0;
+    --gold:#e0a300; --copper:#b06a20;
+    --radius:16px; --shadow:0 10px 30px rgba(14,40,26,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0e1512; --card:#151d19; --ink:#e9f2ec; --muted:#9db0a5;
+      --line:#26332c; --primary:#57c98d; --primary-2:#7ee0a8; --primary-soft:#14301f;
+      --accent:#b79bfb; --accent-soft:#241a44;
+      --ok:#6fe0a3; --ok-bg:#10291c; --ok-line:#1e4a32;
+      --ko:#ff9a92; --ko-bg:#2e1614; --ko-line:#5a2b27;
+      --warn:#f0c265; --warn-bg:#2b2312;
+      --gold:#ffcc4d; --copper:#e8a05a;
+      --shadow:0 10px 30px rgba(0,0,0,.4);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Raleway',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    font-size:16px; line-height:1.5;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:18px 16px 32px}
+
+  /* ---------- En-tête ---------- */
+  .hero{
+    display:flex;align-items:center;gap:16px;justify-content:space-between;
+    background:linear-gradient(135deg,var(--primary),var(--accent));
+    color:#fff;border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);
+  }
+  .hero h1{margin:0;font-size:1.35rem;letter-spacing:.3px}
+  .hero p{margin:4px 0 0;font-size:.85rem;opacity:.92}
+  .hero-score{text-align:center;background:rgba(255,255,255,.16);border-radius:14px;padding:8px 16px;min-width:86px}
+  .hero-score b{display:block;font-size:1.7rem;line-height:1}
+  .hero-score small{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;opacity:.9}
+
+  /* ---------- Barre d'onglets ---------- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:16px 0 10px}
+  .modes{display:flex;flex-wrap:wrap;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px}
+  .modes button{
+    border:0;background:transparent;color:var(--muted);font:inherit;font-size:.88rem;font-weight:600;
+    padding:8px 14px;border-radius:999px;cursor:pointer;transition:.2s;white-space:nowrap;
+  }
+  .modes button:hover{color:var(--ink)}
+  .modes button.active{background:var(--primary);color:#fff}
+  .stats{display:flex;gap:12px;align-items:center;font-size:.82rem;color:var(--muted);font-weight:600}
+  #btnReset{border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:6px 12px;font:inherit;font-size:.78rem;cursor:pointer}
+  #btnReset:hover{color:var(--ink);border-color:var(--muted)}
+
+  /* ---------- Cartes ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-bottom:16px}
+  .qkind{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:4px 12px;margin-bottom:12px}
+  h2{font-size:1.05rem;margin:0 0 10px}
+  h3{font-size:.95rem;margin:18px 0 8px}
+  p{margin:.5em 0}
+  .lead{color:var(--muted);font-size:.95rem}
+
+  /* ---------- Parcours ---------- */
+  .paliers{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+  .palier{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;text-align:left}
+  .palier.dispo{box-shadow:var(--shadow);border-color:var(--primary)}
+  button.palier{cursor:pointer;font:inherit;color:inherit}
+  button.palier:hover{border-color:var(--primary-2);transform:translateY(-1px)}
+  .palier .num{font-size:.72rem;font-weight:800;letter-spacing:1px;color:var(--muted)}
+  .palier .tt{font-weight:800;margin:2px 0 4px}
+  .palier .rs{font-size:.85rem;color:var(--muted)}
+  .tag{display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+    border-radius:999px;padding:2px 9px;margin-top:8px}
+  .tag.bases{background:var(--primary-soft);color:var(--primary-2)}
+  .tag.avance{background:var(--accent-soft);color:var(--accent)}
+  .soon{font-size:.72rem;color:var(--muted);font-style:italic}
+
+  /* ---------- Montage / panneau ---------- */
+  .board{display:grid;grid-template-columns:1.05fr .95fr;gap:16px;align-items:start}
+  @media (max-width:820px){.board{grid-template-columns:1fr}}
+  .panel{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .panel > h3{margin-top:0}
+  .circuit{width:100%;height:auto;color:var(--ink);transition:.2s}
+  .wire{stroke:currentColor;stroke-width:2;fill:none}
+  .wire.live{stroke:var(--copper);stroke-dasharray:6 7;animation:flow .8s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-13}}
+  .cdot{fill:currentColor}
+  .blade{stroke:currentColor;stroke-width:2}
+  .ncbar{stroke:currentColor;stroke-width:2}
+  .battery{stroke:currentColor;stroke-width:2.5}
+  .clabel{fill:currentColor;font-size:13px;font-family:inherit;text-anchor:middle}
+  .csub{fill:var(--muted);font-size:10px;text-anchor:middle}
+  .circuit .contact .blade-open{display:block}
+  .circuit .contact .blade-closed{display:none}
+  .circuit .contact.closed .blade-open{display:none}
+  .circuit .contact.closed .blade-closed{display:block}
+  .lamp .lbulb{fill:none;stroke:currentColor;stroke-width:2}
+  .lamp .lcross{stroke:currentColor;stroke-width:1.6}
+  .lamp.lit{color:var(--gold)}
+  .lamp.lit .lbulb{fill:var(--gold);stroke:var(--gold);filter:drop-shadow(0 0 6px var(--gold))}
+  .lamp.lit .lcross{stroke:var(--card)}
+
+  .gate{width:100%;max-width:210px;height:auto;display:block;margin:0 auto;color:var(--ink)}
+  .gbox{fill:none;stroke:currentColor;stroke-width:2}
+  .gw{stroke:currentColor;stroke-width:2}
+  .gbub{fill:var(--card);stroke:currentColor;stroke-width:2}
+  .gmark{fill:currentColor;font-size:20px;font-weight:700;font-family:inherit}
+  .glabel{fill:currentColor;font-size:13px;font-weight:600;font-family:inherit}
+
+  /* ---------- Interrupteurs ---------- */
+  .switches{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 12px}
+  .switch{
+    display:flex;align-items:center;gap:9px;background:var(--card);border:2px solid var(--line);
+    border-radius:12px;padding:8px 12px;font:inherit;cursor:pointer;transition:.15s;color:var(--ink);
+  }
+  .switch:hover{border-color:var(--primary)}
+  .switch .sw-name{font-weight:800;font-size:1.05rem}
+  .switch .sw-state{font-weight:800;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .switch .sw-knob{width:34px;height:18px;border-radius:999px;background:var(--line);position:relative;transition:.15s}
+  .switch .sw-knob::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--card);transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .switch[aria-checked="true"]{border-color:var(--primary);background:var(--primary-soft)}
+  .switch[aria-checked="true"] .sw-state{color:var(--primary-2)}
+  .switch[aria-checked="true"] .sw-knob{background:var(--primary)}
+  .switch[aria-checked="true"] .sw-knob::after{left:18px}
+  .switch:disabled{opacity:.4;cursor:not-allowed}
+  .state-line{font-size:.9rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
+  .state-line b{color:var(--ink)}
+
+  .fn-picker{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+  .fn-picker button{
+    border:2px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;
+    padding:8px 16px;border-radius:999px;cursor:pointer;transition:.15s;
+  }
+  .fn-picker button:hover{border-color:var(--primary)}
+  .fn-picker button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .fn-picker .extra{font-size:.82rem;font-weight:600;color:var(--muted);border:1px dashed var(--line);background:transparent}
+  .fn-picker .extra.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);border-style:solid}
+
+  /* ---------- Équation ---------- */
+  .eq{font-size:1.35rem;font-weight:800;text-align:center;letter-spacing:.5px;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+  .eq .ovl{text-decoration:overline;padding:0 1px}
+  .eq-cap{text-align:center;font-size:.78rem;color:var(--muted);margin-bottom:8px}
+  .op{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:1px 6px;font-size:.8em;font-weight:700;margin-right:6px}
+
+  /* ---------- Table de vérité ---------- */
+  table.tt{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+  table.tt th,table.tt td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+  table.tt th{background:var(--primary-soft);color:var(--primary-2);font-weight:700}
+  table.tt tbody tr{cursor:pointer}
+  table.tt tbody tr:not(.cur):hover{background:var(--bg)}
+  table.tt tbody tr.cur{background:var(--accent-soft);font-weight:800}
+  table.tt tbody tr.one td.out{color:var(--ok);font-weight:800}
+  table.tt tbody tr.sel{outline:2px solid var(--accent);outline-offset:-2px}
+  table.tt td.out{font-weight:700}
+
+  /* ---------- Bandeaux ---------- */
+  .why{margin-top:12px;background:var(--primary-soft);color:var(--primary-2);border-radius:12px;padding:12px 14px;font-size:.9rem}
+  .why b{color:var(--primary-2)}
+  .conventions{margin-top:10px;background:var(--bg);border:1px dashed var(--line);border-radius:12px;padding:10px 14px;font-size:.85rem;color:var(--muted)}
+  .conventions code{background:var(--primary-soft);color:var(--primary-2);border-radius:5px;padding:1px 6px}
+  .feedback{display:none;margin-top:14px;border-radius:12px;padding:14px 16px;border:1px solid var(--line);font-size:.95rem}
+  .feedback.show{display:block}
+  .feedback.good{background:var(--ok-bg);border-color:var(--ok-line)}
+  .feedback.bad{background:var(--ko-bg);border-color:var(--ko-line)}
+  .feedback .title{font-weight:800;display:block;margin-bottom:6px}
+  .feedback.good .title{color:var(--ok)}
+  .feedback.bad .title{color:var(--ko)}
+
+  .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+  button.primary{border:0;background:var(--primary);color:#fff;font:inherit;font-weight:700;cursor:pointer;padding:12px 20px;border-radius:12px;transition:.2s;font-size:.95rem}
+  button.primary:hover{background:var(--primary-2)}
+  button.ghost{border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-weight:600;cursor:pointer;padding:10px 16px;border-radius:12px;font-size:.85rem}
+  button.ghost:hover{color:var(--ink);border-color:var(--muted)}
+
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+  @media (max-width:620px){.choices{grid-template-columns:1fr}}
+  .choices button{
+    text-align:left;padding:14px 16px;font:inherit;font-size:1.05rem;font-weight:700;color:var(--ink);
+    background:var(--bg);border:2px solid var(--line);border-radius:12px;cursor:pointer;transition:.18s;font-variant-numeric:tabular-nums;
+  }
+  .choices button:hover{border-color:var(--primary);background:var(--primary-soft)}
+  .choices button.ok{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+  .choices button.ko{border-color:var(--ko);background:var(--ko-bg);color:var(--ko)}
+  .choices button:disabled{cursor:default;opacity:.55}
+  .choices button.ok:disabled,.choices button.ko:disabled{opacity:1}
+
+  /* ---------- Mémo ---------- */
+  .memo h2{margin-top:24px}
+  .memo table{width:100%;border-collapse:collapse;font-size:.88rem;background:var(--card);border-radius:12px;overflow:hidden}
+  .memo th,.memo td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+  .memo th{background:var(--primary-soft);color:var(--primary-2);font-weight:700}
+  .memo td:first-child{font-weight:700}
+  .memo .ovl{text-decoration:overline}
+  .memo .ex{background:var(--card);border-left:4px solid var(--primary);border-radius:0 12px 12px 0;padding:12px 16px;margin:10px 0;font-size:.92rem}
+  .memo .trap{background:var(--ko-bg);border-left:4px solid var(--ko);border-radius:0 12px 12px 0;padding:12px 16px;margin:10px 0;font-size:.92rem}
+  .memo ul{padding-left:22px}
+  .memo li{margin:6px 0}
+
+  /* ---------- Fin de défi ---------- */
+  .end{text-align:center}
+  .end .note{font-size:3.4rem;font-weight:800;line-height:1;color:var(--primary);margin:10px 0 4px}
+  .end .appr{color:var(--muted);font-style:italic;margin-bottom:6px}
+  .end .meta{font-size:.85rem;color:var(--muted);margin-bottom:18px}
+  .recap{text-align:left;margin:18px 0 0}
+  .recap h3{font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 8px}
+  .recap ul{list-style:none;padding:0;margin:0;font-size:.9rem}
+  .recap li{border-left:3px solid var(--ko);background:var(--ko-bg);border-radius:0 10px 10px 0;padding:8px 12px;margin-bottom:7px}
+
+  .footer-note{margin-top:16px;font-size:.78rem;color:var(--muted);text-align:center}
+  kbd{background:var(--card);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:.85em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <h1>Logique combinatoire</h1>
+      <p>STI2D — des interrupteurs à l'algèbre de Boole : on manipule, puis on formalise</p>
+    </div>
+    <div class="hero-score">
+      <b id="scoreVal">0</b>
+      <small id="scoreLbl">points</small>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="modes" role="tablist" aria-label="Navigation">
+      <button class="mode-btn active" data-view="parcours" role="tab">Parcours</button>
+      <button class="mode-btn" data-view="p1" role="tab">Palier 1 · 0 et 1</button>
+      <button class="mode-btn" data-view="p2" role="tab">Palier 2 · NON, ET, OU</button>
+      <button class="mode-btn" data-view="defi" role="tab">Défi</button>
+      <button class="mode-btn" data-view="memo" role="tab">Mémo</button>
+    </div>
+    <div class="stats">
+      <span id="statInfo">Parcours</span>
+      <button id="btnReset" type="button">↺ Recommencer</button>
+    </div>
+  </div>
+
+  <main id="view"></main>
+
+  <p class="footer-note">Astuce : dans le montage, tout est cliquable — interrupteurs, lignes de la table de vérité.</p>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+     1. DONNÉES — fonctions logiques et parcours
+     ===================================================================== */
+  var FUNCS = {
+    IDENT: {
+      id:'IDENT', label:'IDENTITÉ', long:'contact simple (S = A)', iec:'1', invert:false,
+      minVars:1, maxVars:1,
+      eq: function (v) { return 'S = ' + v[0]; },
+      calc: function (v) { return v[0] ? 1 : 0; },
+      phrase:'La lampe recopie l\'état de l\'interrupteur.',
+      why:'Le contact est en <b>série</b> avec la lampe : elle s\'allume si et seulement si ' +
+          'l\'interrupteur est fermé. La sortie <b>recopie</b> l\'entrée.'
+    },
+    NON: {
+      id:'NON', label:'NON', long:'NON (inverseur)', iec:'1', invert:true,
+      minVars:1, maxVars:1,
+      eq: function (v) { return 'S = ' + bar(v[0]); },
+      calc: function (v) { return v[0] ? 0 : 1; },
+      phrase:'La lampe fait l\'inverse de A : elle s\'allume quand A = 0.',
+      why:'Le contact est un <b>contact au repos</b> : il est fermé quand l\'interrupteur A est ouvert, ' +
+          'donc quand A = 0. La lampe s\'allume alors que l\'interrupteur n\'est <b>pas</b> actionné : ' +
+          'c\'est l\'<b>inverseur</b>.'
+    },
+    ET: {
+      id:'ET', label:'ET', long:'ET (AND)', iec:'&', invert:false,
+      minVars:2, maxVars:3,
+      eq: function (v) { return 'S = ' + v.join('·'); },
+      calc: function (v) { for (var i = 0; i < v.length; i++) { if (!v[i]) return 0; } return 1; },
+      phrase:'La lampe s\'allume seulement si toutes les variables valent 1.',
+      why:'Les contacts sont branchés en <b>série</b> : le courant doit traverser <b>tous</b> les contacts. ' +
+          'Il suffit qu\'un seul soit ouvert pour que la lampe s\'éteigne.'
+    },
+    OU: {
+      id:'OU', label:'OU', long:'OU (OR)', iec:'≥1', invert:false,
+      minVars:2, maxVars:3,
+      eq: function (v) { return 'S = ' + v.join('+'); },
+      calc: function (v) { for (var i = 0; i < v.length; i++) { if (v[i]) return 1; } return 0; },
+      phrase:'La lampe s\'allume dès qu\'au moins une variable vaut 1.',
+      why:'Les contacts sont branchés en <b>parallèle</b> : il suffit qu\'<b>un seul</b> soit fermé ' +
+          'pour que le courant passe par cette branche.'
+    }
+  };
+
+  var PALIERS = [
+    { n:1, view:'p1', titre:'0 et 1', tag:'Bases', dispo:true,
+      resume:'Une information en tout ou rien : la variable logique, ses deux états, la table de vérité.' },
+    { n:2, view:'p2', titre:'NON, ET, OU', tag:'Bases', dispo:true,
+      resume:'Les trois fonctions de base : symbole normalisé, équation, table, schéma à contacts.' },
+    { n:3, view:'p3', titre:'Du schéma à l\'équation', tag:'Avancé', dispo:false,
+      resume:'Trois variables, table complète et forme canonique (somme de produits).' },
+    { n:4, view:'p4', titre:'Du français à la logique', tag:'Avancé', dispo:false,
+      resume:'Traduire un cahier des charges en variables, table et équation.' },
+    { n:5, view:'p5', titre:'NON-ET et NON-OU', tag:'Avancé', dispo:false,
+      resume:'Les fonctions universelles : tout construire avec une seule porte.' },
+    { n:6, view:'p6', titre:'OU-exclusif', tag:'Avancé', dispo:false,
+      resume:'XOR, parité, détection d\'incohérence.' },
+    { n:7, view:'p7', titre:'Équivalences remarquables', tag:'Avancé', dispo:false,
+      resume:'De Morgan, absorption, distributivité : simplifier en justifiant.' },
+    { n:8, view:'p8', titre:'Missions', tag:'Avancé', dispo:false,
+      resume:'Portail, alarme, tri de pièces : le cahier des charges complet.' }
+  ];
+
+  var VARS3 = ['A','B','C'];
+
+  /* =====================================================================
+     2. MOTEUR LOGIQUE
+     ===================================================================== */
+  function bar(x) { return '<span class="ovl">' + x + '</span>'; }
+
+  /* Variables utilisées par la fonction courante */
+  function varsFor(fnId, third) {
+    var f = FUNCS[fnId];
+    if (f.maxVars === 1) return ['A'];
+    return third ? ['A','B','C'] : ['A','B'];
+  }
+
+  /* Toutes les combinaisons d'entrées, dans l'ordre 000, 001, 010… */
+  function allRows(fnId, varsArr) {
+    var f = FUNCS[fnId], n = varsArr.length, out = [], total = Math.pow(2, n), i, k, v;
+    for (i = 0; i < total; i++) {
+      v = [];
+      for (k = 0; k < n; k++) { v.push((i >> (n - 1 - k)) & 1); }
+      out.push({ v: v, o: f.calc(v) });
+    }
+    return out;
+  }
+
+  /* Combinaisons qui allument la lampe (utile pour les exercices) */
+  function onesOf(fnId, varsArr) {
+    return allRows(fnId, varsArr).filter(function (r) { return r.o === 1; })
+      .map(function (r) { return r.v.join(''); });
+  }
+
+  function evalFn(fnId, values) { return FUNCS[fnId].calc(values); }
+
+  /* =====================================================================
+     3. SVG — symbole normalisé, schéma à contacts, lampe
+     ===================================================================== */
+  function svgGate(fnId, varsArr) {
+    var f = FUNCS[fnId], n = varsArr.length;
+    var H = Math.max(50, n * 22 + 28), W = 150, bx = 40, bw = 58;
+    var s = '<svg class="gate" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Symbole normalisé ' + f.long + '">';
+    s += '<rect class="gbox" x="' + bx + '" y="7" width="' + bw + '" height="' + (H - 14) + '" rx="4"/>';
+    s += '<text class="gmark" x="' + (bx + bw / 2) + '" y="' + (H / 2) + '" text-anchor="middle" dominant-baseline="central">' + f.iec + '</text>';
+    for (var i = 0; i < n; i++) {
+      var y = 7 + (H - 14) * (i + 1) / (n + 1);
+      s += '<line class="gw" x1="6" y1="' + y + '" x2="' + bx + '" y2="' + y + '"/>';
+      s += '<text class="glabel" x="8" y="' + (y - 6) + '">' + varsArr[i] + '</text>';
+    }
+    var yc = H / 2, xOut = f.invert ? W - 20 : W - 4;
+    s += '<line class="gw" x1="' + (bx + bw) + '" y1="' + yc + '" x2="' + xOut + '" y2="' + yc + '"/>';
+    if (f.invert) { s += '<circle class="gbub" cx="' + (W - 16) + '" cy="' + yc + '" r="4"/>'; }
+    s += '<text class="glabel" x="' + (W - 10) + '" y="' + (yc - 9) + '">S</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  function contactSym(x, y, label, inverted, labelBelow) {
+    var s = '<g class="contact" data-contact="' + label + '">';
+    s += '<line class="wire" x1="' + (x - 17) + '" y1="' + y + '" x2="' + (x - 4) + '" y2="' + y + '"/>';
+    s += '<line class="wire" x1="' + (x + 4) + '" y1="' + y + '" x2="' + (x + 17) + '" y2="' + y + '"/>';
+    s += '<circle class="cdot" cx="' + (x - 4) + '" cy="' + y + '" r="2.4"/>';
+    s += '<circle class="cdot" cx="' + (x + 4) + '" cy="' + y + '" r="2.4"/>';
+    /* position ouverte (blade levée) et position fermée : le CSS choisit selon .closed */
+    s += '<line class="blade blade-open" x1="' + (x - 4) + '" y1="' + y + '" x2="' + (x + 9) + '" y2="' + (y - 12) + '"/>';
+    s += '<line class="blade blade-closed" x1="' + (x - 4) + '" y1="' + y + '" x2="' + (x + 4) + '" y2="' + y + '"/>';
+    if (inverted) { s += '<line class="ncbar" x1="' + (x - 6) + '" y1="' + (y - 7) + '" x2="' + (x + 6) + '" y2="' + (y + 7) + '"/>'; }
+    if (labelBelow) { s += '<text class="clabel" x="' + x + '" y="' + (y + 24) + '">' + label + '</text>'; }
+    else { s += '<text class="clabel" x="' + (x + 26) + '" y="' + (y + 4) + '">' + label + '</text>'; }
+    s += '</g>';
+    return s;
+  }
+
+  function wireSeg(x1, x2, y) {
+    return '<line class="wire" x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y + '"/>';
+  }
+
+  function svgCircuit(fnId, varsArr) {
+    var f = FUNCS[fnId], n = varsArr.length;
+    var W = 380, yMain = 58, railL = 22, railR = 358;
+    var midX = 190, nodeL = 112, nodeR = 268, step = 34;
+    var half = (n - 1) / 2 * step;
+    var yTop = (f.id === 'OU') ? yMain - half : yMain;
+    var yBot = yMain + half + 76;
+    var H = yBot + 34;
+    var s = '<svg class="circuit" id="circuit" viewBox="0 0 ' + W + ' ' + H + '" data-lit="0" ' +
+            'data-fn="' + f.id + '" data-vars="' + varsArr.join('') + '" role="img" ' +
+            'aria-label="Schéma électrique équivalent à la fonction ' + f.label + '">';
+
+    /* rails et ligne du bas avec le générateur */
+    s += '<line class="wire" x1="' + railL + '" y1="' + yTop + '" x2="' + railL + '" y2="' + yBot + '"/>';
+    s += '<line class="wire" x1="' + railR + '" y1="' + yTop + '" x2="' + railR + '" y2="' + yBot + '"/>';
+    s += '<line class="wire" x1="' + railL + '" y1="' + yBot + '" x2="' + (W / 2 - 12) + '" y2="' + yBot + '"/>';
+    s += '<line class="battery" x1="' + (W / 2 - 12) + '" y1="' + (yBot - 13) + '" x2="' + (W / 2 - 12) + '" y2="' + (yBot + 13) + '"/>';
+    s += '<line class="battery" x1="' + (W / 2 + 12) + '" y1="' + (yBot - 7) + '" x2="' + (W / 2 + 12) + '" y2="' + (yBot + 7) + '"/>';
+    s += '<line class="wire" x1="' + (W / 2 + 12) + '" y1="' + yBot + '" x2="' + railR + '" y2="' + yBot + '"/>';
+    s += '<text class="csub" x="' + (W / 2) + '" y="' + (yBot + 30) + '">générateur</text>';
+
+    var R = 17;   /* demi-largeur d'un symbole (contact ou lampe) */
+    var lampRight = 312;
+
+    if (f.id === 'OU') {
+      /* parallèle : une branche par variable */
+      s += wireSeg(railL, nodeL, yMain);
+      s += '<line class="wire" x1="' + nodeL + '" y1="' + (yMain - half) + '" x2="' + nodeL + '" y2="' + (yMain + half) + '"/>';
+      s += '<line class="wire" x1="' + nodeR + '" y1="' + (yMain - half) + '" x2="' + nodeR + '" y2="' + (yMain + half) + '"/>';
+      for (var i = 0; i < n; i++) {
+        var yb = yMain + (i - (n - 1) / 2) * step;
+        s += wireSeg(nodeL, midX - R, yb);
+        s += wireSeg(midX + R, nodeR, yb);
+        s += contactSym(midX, yb, varsArr[i], false, false);
+      }
+      s += wireSeg(nodeR, lampRight - R, yMain);
+      s += wireSeg(lampRight + R, railR, yMain);
+      s += lampSym(lampRight, yMain);
+    } else {
+      /* série (ET, IDENT) ou contact au repos (NON) */
+      var slots = n + 1, zone = 250, start = 74;
+      var prev = railL, k, c;
+      for (k = 0; k < n; k++) {
+        c = start + (k + 0.5) * (zone / slots);
+        s += wireSeg(prev, c - R, yMain);
+        s += contactSym(c, yMain, varsArr[k], (f.id === 'NON'), true);
+        prev = c + R;
+      }
+      var lampS = start + (n + 0.5) * (zone / slots);
+      s += wireSeg(prev, lampS - R, yMain);
+      s += wireSeg(lampS + R, railR, yMain);
+      s += lampSym(lampS, yMain);
+    }
+    s += '</svg>';
+    return s;
+  }
+
+  function lampSym(x, y) {
+    return '<g class="lamp" id="lampG">' +
+      '<circle class="lbulb" cx="' + x + '" cy="' + y + '" r="13"/>' +
+      '<line class="lcross" x1="' + (x - 9) + '" y1="' + (y - 9) + '" x2="' + (x + 9) + '" y2="' + (y + 9) + '"/>' +
+      '<line class="lcross" x1="' + (x - 9) + '" y1="' + (y + 9) + '" x2="' + (x + 9) + '" y2="' + (y - 9) + '"/>' +
+      '<text class="clabel" x="' + x + '" y="' + (y + 30) + '">S</text>' +
+      '</g>';
+  }
+
+  /* =====================================================================
+     4. ÉTAT
+     ===================================================================== */
+  var state = {
+    view:'parcours',
+    fn:'ET', third:false,
+    sw:{A:0,B:0,C:0},
+    score:0,
+    /* exercice de la vue courante */
+    ex:null,
+    /* défi */
+    defi:null,
+    lastCorrectPos:-1,
+    focusVar:null
+  };
+
+  var el = {
+    view:document.getElementById('view'),
+    score:document.getElementById('scoreVal'),
+    scoreLbl:document.getElementById('scoreLbl'),
+    info:document.getElementById('statInfo'),
+    reset:document.getElementById('btnReset')
+  };
+
+  function activeVars() { return varsFor(state.fn, state.third); }
+  function currentValues() { return activeVars().map(function (v) { return state.sw[v]; }); }
+  function currentOut() { return evalFn(state.fn, currentValues()); }
+
+  /* =====================================================================
+     5. VUES
+     ===================================================================== */
+  function viewParcours() {
+    var cards = PALIERS.map(function (p) {
+      var inner = '<div class="num">Palier ' + p.n + '</div>' +
+        '<div class="tt">' + p.titre + '</div>' +
+        '<div class="rs">' + p.resume + '</div>' +
+        '<span class="tag ' + (p.tag === 'Bases' ? 'bases' : 'avance') + '">' + p.tag + '</span>' +
+        (p.dispo ? '' : ' <span class="soon">prochainement</span>');
+      if (p.dispo) {
+        return '<button class="palier dispo" data-goto="' + p.view + '">' + inner + '</button>';
+      }
+      return '<div class="palier">' + inner + '</div>';
+    }).join('');
+
+    var total = 0;
+    for (var i = 0; i < PALIERS.length; i++) { if (PALIERS[i].tag === 'Bases') total++; }
+
+    return '<section class="card">' +
+      '<span class="qkind">Parcours</span>' +
+      '<h2>Manipuler<span style="color:var(--muted)"> ⇄ </span>formel, jamais l\'un sans l\'autre</h2>' +
+      '<p class="lead">À gauche le montage : des interrupteurs, des contacts, une lampe. À droite l\'écriture ' +
+      'formelle qui décrit exactement ce montage : symbole normalisé, équation, table de vérité. ' +
+      'Chaque clic met les deux à jour ensemble.</p>' +
+      '<p class="lead">Les paliers <b>Bases</b> sont accessibles ici (' + total + ' paliers). ' +
+      'Les paliers <b>Avancé</b> arriveront à la suite de cette première version.</p>' +
+      '<h3>Le parcours</h3>' +
+      '<div class="paliers">' + cards + '</div>' +
+      '</section>' +
+      '<section class="card">' +
+      '<h2>Conventions d\'écriture de tout le module</h2>' +
+      '<p><span class="op">·</span> se lit <b>ET</b> &nbsp;·&nbsp; <span class="op">+</span> se lit <b>OU</b> ' +
+      '&nbsp;·&nbsp; <span class="ovl">A</span> se lit <b>NON A</b> (barre au-dessus de la variable).</p>' +
+      '<p class="lead">Priorité des opérations : NON d\'abord, puis ET, puis OU — sinon on met des parenthèses. ' +
+      'Ainsi A·B + C se lit (A·B) + C.</p>' +
+      '</section>';
+  }
+
+  function renderPalier1() {
+    var f = FUNCS.NON;
+    return '<section class="card">' +
+      '<span class="qkind">Palier 1 · Bases</span>' +
+      '<h2>0 et 1 : une information qui n\'a que deux états</h2>' +
+      '<p class="lead">Un interrupteur ne peut être que <b>ouvert</b> ou <b>fermé</b>, une lampe que ' +
+      '<b>éteinte</b> ou <b>allumée</b>. On code ces deux états avec deux symboles : <b>0</b> et <b>1</b>.</p>' +
+      '<div class="board">' +
+        '<div class="panel">' +
+          '<h3>Le montage</h3>' +
+          '<div class="switches" id="switchZone"></div>' +
+          '<div id="circuitZone"></div>' +
+          '<p class="state-line" id="stateLine"></p>' +
+        '</div>' +
+        '<div class="panel">' +
+          '<h3>La forme</h3>' +
+          '<div id="gateZone"></div>' +
+          '<p class="eq" id="eqZone"></p>' +
+          '<p class="eq-cap" id="eqCap">contact simple : la lampe recopie l\'état de A</p>' +
+          '<p class="eq-cap" id="ttCap"></p>' +
+          '<table class="tt" id="ttZone"></table>' +
+        '</div>' +
+      '</div>' +
+      '<div class="why"><b>Pourquoi 0 et 1 ?</b> Parce qu\'il n\'y a que deux cas possibles, on peut décrire ' +
+      'le montage <b>en entier</b> par un tableau à deux lignes : c\'est la <b>table de vérité</b>. ' +
+      'La table, le montage et l\'équation disent exactement la même chose.</div>' +
+      '<div class="conventions"><b>À retenir —</b> 1 = vrai = contact fermé = lampe allumée ; ' +
+      '0 = faux = contact ouvert = lampe éteinte. Une grandeur qui ne prend que ces deux valeurs est une ' +
+      '<b>variable logique</b>.</div>' +
+      '</section>' +
+      '<section class="card" id="exoZone"></section>';
+  }
+
+  function renderPalier2() {
+    return '<section class="card">' +
+      '<span class="qkind">Palier 2 · Bases</span>' +
+      '<h2>Les trois fonctions de base : NON, ET, OU</h2>' +
+      '<p class="lead">Choisis une fonction, puis actionne les interrupteurs : le montage, l\'équation et la ' +
+      'table de vérité se mettent à jour ensemble. Clique aussi une ligne de la table pour placer le montage ' +
+      'dans cet état.</p>' +
+      '<div class="fn-picker" id="fnPicker"></div>' +
+      '<div class="board">' +
+        '<div class="panel">' +
+          '<h3>Le montage</h3>' +
+          '<div class="switches" id="switchZone"></div>' +
+          '<div id="circuitZone"></div>' +
+          '<p class="state-line" id="stateLine"></p>' +
+        '</div>' +
+        '<div class="panel">' +
+          '<h3>La forme</h3>' +
+          '<div id="gateZone"></div>' +
+          '<p class="eq" id="eqZone"></p>' +
+          '<p class="eq-cap" id="eqCap"></p>' +
+          '<p class="eq-cap" id="ttCap"></p>' +
+          '<table class="tt" id="ttZone"></table>' +
+        '</div>' +
+      '</div>' +
+      '<div class="why" id="whyZone"></div>' +
+      '<div class="conventions" id="convZone"></div>' +
+      '</section>' +
+      '<section class="card" id="exoZone"></section>';
+  }
+
+  /* ---------- Exercice du palier 1 : lire la table « à l'envers » ---------- */
+  function newIdentExercise() {
+    return { kind:'ident', lit:(Math.random() < 0.5 ? 1 : 0), done:false, ok:false, picked:null };
+  }
+
+  function renderIdentExercise(ex) {
+    var fb = ex.done
+      ? '<div class="feedback show ' + (ex.ok ? 'good' : 'bad') + '" data-verdict="' + (ex.ok ? 'ok' : 'ko') + '">' +
+        '<span class="title">' + (ex.ok ? '✅ Exact !' : '❌ Non') + '</span>' +
+        'Le contact est en série avec la lampe, donc <b>S = A</b> : la lampe recopie l\'état de A. ' +
+        'Lampe ' + (ex.lit ? 'allumée' : 'éteinte') + ' ⟹ <b>A = ' + ex.lit + '</b> ' +
+        '(ligne ' + ex.lit + ' de la table, colonne S).</div>'
+      : '';
+    var btns = [0,1].map(function (v) {
+      var cls = '';
+      if (ex.done) { if (v === ex.lit) cls = 'ok'; else if (v === ex.picked) cls = 'ko'; }
+      return '<button data-ans="' + v + '"' + (cls ? ' class="' + cls + '"' : '') +
+        (ex.done ? ' disabled' : '') + '>' + v + '</button>';
+    }).join('');
+    return '<span class="qkind">Mini-exercice</span>' +
+      '<h2>Lire la table à l\'envers</h2>' +
+      '<p class="lead">Le circuit est celui du palier 1 : un contact simple et une lampe. ' +
+      'On observe la lampe <b>' + (ex.lit ? 'allumée' : 'éteinte') + '</b>. Que vaut l\'interrupteur A ?</p>' +
+      '<div class="choices" id="choicesExo">' + btns + '</div>' + fb +
+      '<div class="actions">' +
+      (ex.done ? '<button class="primary" id="btnExoNext">Nouvelle question ▶</button>' : '') +
+      '</div>';
+  }
+
+  /* ---------- Exercice « quelles combinaisons allument la lampe ? » ---------- */
+  function newCombiExercise() {
+    var pool = [
+      { fn:'NON', vars:['A'] },
+      { fn:'ET',  vars:['A','B'] },
+      { fn:'ET',  vars:['A','B','C'] },
+      { fn:'OU',  vars:['A','B'] },
+      { fn:'OU',  vars:['A','B','C'] }
+    ];
+    var pickIdx = Math.floor(Math.random() * pool.length);
+    var p = pool[pickIdx];
+    return { kind:'combi', fn:p.fn, vars:p.vars, sel:{}, done:false, ok:false };
+  }
+
+  function renderExercise() {
+    var ex = state.ex;
+    if (!ex) return '';
+    if (ex.kind === 'ident') return renderIdentExercise(ex);
+    var f = FUNCS[ex.fn];
+    var rows = allRows(ex.fn, ex.vars);
+    var head = ex.vars.map(function (v) { return '<th>' + v + '</th>'; }).join('') + '<th>S</th>';
+    var body = rows.map(function (r, i) {
+      return '<tr data-row="' + i + '" data-out="' + r.o + '"' + (ex.sel[i] ? ' class="sel"' : '') + '>' +
+        r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
+        '<td class="out">' + (ex.done ? r.o : '?') + '</td></tr>';
+    }).join('');
+
+    var fb = '';
+    if (ex.done) {
+      var goodList = onesOf(ex.fn, ex.vars);
+      fb = '<div class="feedback show ' + (ex.ok ? 'good' : 'bad') + '" data-verdict="' + (ex.ok ? 'ok' : 'ko') + '">' +
+        '<span class="title">' + (ex.ok ? '✅ Exact !' : '❌ Ce n\'est pas la bonne liste') + '</span>' +
+        'Avec <b>' + f.eq(ex.vars) + '</b>, la lampe s\'allume pour : <b>' +
+        goodList.map(function (v) { return v.split('').join(''); }).join(', ') +
+        '</b> (' + ex.vars.join(', ') + ' dans l\'ordre). ' + f.why +
+        '</div>';
+    }
+
+    return '<span class="qkind">Mini-exercice</span>' +
+      '<h2>À quelles combinaisons la lampe s\'allume-t-elle ?</h2>' +
+      '<p class="lead">Question indépendante du montage ci-dessus. La lampe est câblée sur la fonction <b>' + f.long + '</b>. ' +
+      'Coche les lignes de la table pour lesquelles la lampe est allumée, puis valide.</p>' +
+      '<table class="tt" id="ttExo">' +
+      '<thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>' +
+      fb +
+      '<div class="actions">' +
+      (ex.done
+        ? '<button class="primary" id="btnExoNext">Nouvel exercice ▶</button>'
+        : '<button class="primary" id="btnExoOk">Valider</button>') +
+      '</div>';
+  }
+
+  function viewDefi() {
+    if (!state.defi) { startDefi(); }
+    var d = state.defi;
+    if (d.finished) return renderDefiEnd();
+    var q = d.q;
+    var head = '<span class="qkind">Défi · question ' + (d.index + 1) + ' / ' + d.total + '</span>';
+
+    if (q.kind === 'combi') {
+      var f = FUNCS[q.fn];
+      var rows = allRows(q.fn, q.vars);
+      var th = q.vars.map(function (v) { return '<th>' + v + '</th>'; }).join('') + '<th>S</th>';
+      var tb = rows.map(function (r, i) {
+        return '<tr data-row="' + i + '" data-out="' + r.o + '"' + (q.sel[i] ? ' class="sel"' : '') + '>' +
+          r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
+          '<td class="out">' + (q.done ? r.o : '?') + '</td></tr>';
+      }).join('');
+      var fb1 = q.done
+        ? '<div class="feedback show ' + (q.ok ? 'good' : 'bad') + '" data-verdict="' + (q.ok ? 'ok' : 'ko') + '">' +
+          '<span class="title">' + (q.ok ? '✅ Exact !' : '❌ Raté') + '</span>La fonction était <b>' + f.eq(q.vars) +
+          '</b> : allumée pour <b>' + onesOf(q.fn, q.vars).join(', ') + '</b>. ' + f.why + '</div>'
+        : '';
+      return '<section class="card">' + head +
+        '<div class="prompt"><h2>Pour quelles combinaisons la sortie S vaut-elle 1 ?</h2>' +
+        '<p class="lead">Coche les lignes concernées, puis valide.</p></div>' +
+        '<table class="tt" id="ttDefi"><thead><tr>' + th + '</tr></thead><tbody>' + tb + '</tbody></table>' +
+        fb1 +
+        '<div class="actions"><button class="primary" id="btnDefiOk"' + (q.done ? ' style="display:none"' : '') + '>Valider</button>' +
+        '<button class="primary" id="btnDefiNext" style="display:none">Question suivante ▶</button></div>' +
+        '</section>';
+    }
+
+    /* QCM : table donnée, équation à reconnaître */
+    var seq = allRows(q.fn, q.vars);
+    var th2 = q.vars.map(function (v) { return '<th>' + v + '</th>'; }).join('') + '<th>S</th>';
+    var tb2 = seq.map(function (r) {
+      return '<tr class="' + (r.o ? 'one' : '') + '">' +
+        r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
+        '<td class="out">' + r.o + '</td></tr>';
+    }).join('');
+    var choices = q.choices.map(function (c, i) {
+      var cls = '';
+      if (q.done) {
+        if (c.ok) cls = 'ok'; else if (i === q.picked) cls = 'ko';
+      }
+      return '<button data-i="' + i + '"' + (cls ? ' class="' + cls + '"' : '') +
+        (q.done ? ' disabled' : '') + '>' + c.html + '</button>';
+    }).join('');
+    var fb2 = q.done
+      ? '<div class="feedback show ' + (q.ok ? 'good' : 'bad') + '" data-verdict="' + (q.ok ? 'ok' : 'ko') + '">' +
+        '<span class="title">' + (q.ok ? '✅ Correct !' : '❌ Bonne réponse : ' + FUNCS[q.fn].eq(q.vars)) + '</span>' +
+        FUNCS[q.fn].why + '</div>'
+      : '';
+    return '<section class="card">' + head +
+      '<div class="prompt"><h2>La table de vérité ci-dessous correspond à quelle équation ?</h2></div>' +
+      '<table class="tt" id="ttDefi"><thead><tr>' + th2 + '</tr></thead><tbody>' + tb2 + '</tbody></table>' +
+      '<div class="choices" id="choicesDefi">' + choices + '</div>' +
+      fb2 +
+      '<div class="actions"><button class="primary" id="btnDefiNext" style="display:none">Question suivante ▶</button></div>' +
+      '</section>';
+  }
+
+  function renderDefiEnd() {
+    var d = state.defi;
+    var note = Math.round(d.correct / d.total * 20);
+    var appr = note === 20 ? 'Parfait ! Tu lis les tables et les équations sans hésiter.' :
+      note >= 16 ? 'Excellent travail !' :
+      note >= 14 ? 'Bien : quelques confusions à lever.' :
+      note >= 10 ? 'Moyen : revois le Mémo, surtout « série = ET, parallèle = OU ».' :
+      'À consolider : reprends les paliers 1 et 2, puis relance un défi.';
+    var seen = {}, recap = d.errors.filter(function (e) {
+      if (seen[e]) return false; seen[e] = true; return true;
+    }).slice(0, 6);
+    var secs = Math.round((Date.now() - d.startedAt) / 1000);
+    return '<section class="card end">' +
+      '<span class="qkind">Défi terminé</span>' +
+      '<div class="note">' + note + ' / 20</div>' +
+      '<div class="appr">' + appr + '</div>' +
+      '<div class="meta">' + d.correct + ' / ' + d.total + ' bonnes réponses · temps : ' +
+      Math.floor(secs / 60) + ' min ' + String(secs % 60).padStart(2, '0') + ' s · meilleure série : ' + d.best + '</div>' +
+      '<div class="actions" style="justify-content:center">' +
+      '<button class="primary" id="btnDefiReplay">↻ Rejouer un défi</button></div>' +
+      (recap.length ? '<div class="recap"><h3>À revoir</h3><ul>' +
+        recap.map(function (r) { return '<li>' + r + '</li>'; }).join('') + '</ul></div>' : '') +
+      '</section>';
+  }
+
+  function viewMemo() {
+    var rows = ['NON','ET','OU'].map(function (id) {
+      var f = FUNCS[id], vars = id === 'NON' ? ['A'] : ['A','B'];
+      return '<tr><td>' + f.long + '</td>' +
+        '<td>' + f.iec + '</td>' +
+        '<td>' + f.eq(vars) + '</td>' +
+        '<td>' + allRows(id, vars).map(function (r) {
+          return r.v.join('') + '→' + r.o;
+        }).join(' &nbsp; ') + '</td>' +
+        '<td>' + (id === 'NON' ? 'contact au repos' : id === 'ET' ? 'contacts en série' : 'contacts en parallèle') + '</td></tr>';
+    }).join('');
+
+    return '<section class="card memo">' +
+      '<span class="qkind">Mémo</span>' +
+      '<h2>1. Variable et état logiques</h2>' +
+      '<ul>' +
+      '<li>Une <b>variable logique</b> ne prend que deux valeurs : <b>0</b> ou <b>1</b>.</li>' +
+      '<li>Convention du module : <b>1 = vrai = contact fermé = lampe allumée</b>, 0 = l\'inverse.</li>' +
+      '<li>Une <b>fonction logique</b> associe à chaque combinaison des entrées une valeur de sortie : ' +
+      'c\'est ce que récapitule la <b>table de vérité</b>. La sortie est notée <b>S</b> ' +
+      '(ici, l\'état de la lampe).</li>' +
+      '</ul>' +
+
+      '<h2>2. Les trois fonctions de base</h2>' +
+      '<table><tr><th>Fonction</th><th>Symbole</th><th>Équation</th><th>Table</th><th>Montage</th></tr>' +
+      rows + '</table>' +
+      '<p class="lead">Le symbole est celui de la norme <b>NF EN 60617</b> : un rectangle portant ' +
+      '<b>&amp;</b> pour le ET, <b>≥1</b> pour le OU, et un <b>petit cercle</b> à la sortie pour l\'inversion. ' +
+      'Le cercle s\'appelle un « ballon » ou une « bulle d\'inversion ».</p>' +
+
+      '<h2>3. Correspondance montage ⇄ logique</h2>' +
+      '<div class="ex"><b>Contacts en série → ET.</b> Le courant traverse tous les contacts : la lampe ' +
+      's\'allume seulement si A <b>et</b> B sont fermés.</div>' +
+      '<div class="ex"><b>Contacts en parallèle → OU.</b> Le courant choisit une branche : il suffit ' +
+      'qu\'un contact soit fermé.</div>' +
+      '<div class="ex"><b>Contact au repos → NON.</b> Le contact est fermé quand la variable vaut 0 : ' +
+      'la sortie est l\'inverse de l\'entrée.</div>' +
+
+      '<h2>4. Écriture et priorités</h2>' +
+      '<ul>' +
+      '<li><span class="op">·</span> = ET, <span class="op">+</span> = OU, <span class="ovl">A</span> = NON A.</li>' +
+      '<li>Ordre de priorité : <b>NON</b>, puis <b>ET</b>, puis <b>OU</b>. ' +
+      'A·B + C se lit donc (A·B) + C.</li>' +
+      '<li>On met des parenthèses dès qu\'un OU doit être traité avant un ET : A·(B + C).</li>' +
+      '<li>Au clavier, la barre de négation s\'écrit souvent <code>!A</code>, <code>/A</code> ou <code>Ā</code> ; ' +
+      'dans ce module, on l\'écrit toujours avec une barre au-dessus : ' + bar('A') + '.</li>' +
+      '</ul>' +
+
+      '<h2>5. Identités à connaître tout de suite</h2>' +
+      '<table>' +
+      '<tr><th>Identité</th><th>Version OU</th><th>Pourquoi (avec des contacts)</th></tr>' +
+      '<tr><td>A · 1 = A</td><td>A + 0 = A</td><td>Un contact toujours fermé ne change rien : il est « transparent ».</td></tr>' +
+      '<tr><td>A · 0 = 0</td><td>A + 1 = 1</td><td>Un contact toujours ouvert bloque la branche : la lampe ne peut pas s\'allumer.</td></tr>' +
+      '<tr><td>A · A = A</td><td>A + A = A</td><td>Deux contacts commandés par le même interrupteur, en série ou en parallèle, ne changent rien.</td></tr>' +
+      '<tr><td>A · ' + bar('A') + ' = 0</td><td>A + ' + bar('A') + ' = 1</td>' +
+      '<td>Un contact travail et un contact repos sont toujours dans des états opposés.</td></tr>' +
+      '</table>' +
+      '<div class="trap"><b>Et la suite ?</b> Les <b>équivalences remarquables</b> — lois de De Morgan, absorption, ' +
+      'distributivité — font l\'objet du <b>palier 7</b>. On simplifiera alors en justifiant chaque étape par la règle appliquée.</div>' +
+
+      '<h2>6. Méthode de lecture d\'un énoncé</h2>' +
+      '<ol>' +
+      '<li>Nommer les variables : une variable par information d\'entrée (interrupteur, capteur…).</li>' +
+      '<li>Décider de la convention : que signifie 1 pour chaque variable ?</li>' +
+      '<li>Écrire la phrase du cahier des charges avec <b>ET</b> et <b>OU</b>.</li>' +
+      '<li>En déduire l\'équation, puis la table de vérité, puis le montage.</li>' +
+      '<li>Vérifier les cas limites : que se passe-t-il si tout vaut 0 ? si tout vaut 1 ?</li>' +
+      '</ol>' +
+      '</section>';
+  }
+
+  /* =====================================================================
+     6. RENDU
+     ===================================================================== */
+  function render() {
+    var html = '';
+    if (state.view === 'parcours') html = viewParcours();
+    else if (state.view === 'p1') { html = renderPalier1(); }
+    else if (state.view === 'p2') { html = renderPalier2(); }
+    else if (state.view === 'defi') html = viewDefi();
+    else if (state.view === 'memo') html = viewMemo();
+    el.view.innerHTML = html;
+
+    Array.prototype.forEach.call(document.querySelectorAll('.mode-btn'), function (b) {
+      b.classList.toggle('active', b.getAttribute('data-view') === state.view);
+    });
+
+    if (state.view === 'p1') {
+      buildSandbox(false); updateLive();
+      if (!state.ex || state.ex.kind !== 'ident') state.ex = newIdentExercise();
+      renderExerciseInto(false);
+    }
+    if (state.view === 'p2') {
+      buildSandbox(true); updateLive();
+      if (!state.ex || state.ex.kind !== 'combi') state.ex = newCombiExercise();
+      renderExerciseInto(false);
+    }
+    if (state.view === 'defi') { wireDefi(); }
+    updateStats();
+    scheduleResize();
+  }
+
+  function updateStats() {
+    if (state.view === 'defi' && state.defi) {
+      el.score.textContent = Math.round(state.defi.correct / state.defi.total * 20);
+      el.scoreLbl.textContent = 'note sur 20';
+    } else {
+      el.score.textContent = state.score;
+      el.scoreLbl.textContent = 'points';
+    }
+    el.info.textContent = state.view === 'parcours' ? 'Parcours'
+      : state.view === 'p1' ? 'Palier 1 · 0 et 1'
+      : state.view === 'p2' ? 'Palier 2 · NON, ET, OU'
+      : state.view === 'defi' ? (state.defi ? 'Défi · question ' + Math.min(state.defi.index + 1, state.defi.total) + ' / ' + state.defi.total : 'Défi')
+      : 'Mémo';
+  }
+
+  /* ---------- Bac à sable : squelette puis mise à jour ciblée ---------- */
+  function buildSandbox(withPicker) {
+    var vars = activeVars();
+    var swZone = document.getElementById('switchZone');
+    swZone.innerHTML = ['A','B','C'].map(function (v) {
+      var on = vars.indexOf(v) >= 0;
+      return '<button class="switch" role="switch" data-sw="' + v + '" aria-checked="' + (state.sw[v] ? 'true' : 'false') + '"' +
+        (on ? '' : ' disabled') + '>' +
+        '<span class="sw-name">' + v + '</span>' +
+        '<span class="sw-knob" aria-hidden="true"></span>' +
+        '<span class="sw-state">' + state.sw[v] + '</span></button>';
+    }).join('');
+
+    if (withPicker) {
+      var f = FUNCS[state.fn];
+      var pick = ['NON','ET','OU'].map(function (id) {
+        return '<button data-fn="' + id + '"' + (state.fn === id ? ' class="active"' : '') + '>' + FUNCS[id].long + '</button>';
+      }).join('');
+      document.getElementById('fnPicker').innerHTML = pick +
+        '<button id="btnThird" class="extra' + (state.third ? ' active' : '') + '" data-third="1">' +
+        (state.third ? '✓ ' : '+ ') + '3<sup>e</sup> entrée C</button>';
+    }
+
+    var fid = sandboxFn();
+    document.getElementById('circuitZone').innerHTML = svgCircuit(fid, vars);
+    document.getElementById('gateZone').innerHTML = svgGate(fid, vars);
+    document.getElementById('eqZone').innerHTML = FUNCS[fid].eq(vars);
+    document.getElementById('eqCap').textContent = FUNCS[fid].phrase;
+    if (document.getElementById('whyZone'))
+      document.getElementById('whyZone').innerHTML = '<b>Pourquoi ça marche —</b> ' + FUNCS[fid].why;
+    if (document.getElementById('convZone'))
+      document.getElementById('convZone').innerHTML = '<b>Conventions —</b> <span class="op">·</span> ET ' +
+        '<span class="op">+</span> OU ' + '<span class="ovl">A</span> NON. ' +
+        'La sortie est notée <b>S</b> (ici, la lampe). ' +
+        'Le cercle à la sortie du symbole signifie « inverse » (norme NF EN 60617).';
+    var cap = document.getElementById('ttCap');
+    if (cap) cap.textContent = (state.view === 'p1')
+      ? 'S = A : la lampe recopie l\'état de l\'interrupteur'
+      : 'Table de vérité de ' + FUNCS[fid].long;
+    renderTruthTable('ttZone');
+  }
+
+  /* Fonction utilisée par le bac à sable : identité au palier 1, fonction choisie au palier 2 */
+  function sandboxFn() { return state.view === 'p1' ? 'IDENT' : state.fn; }
+
+  function renderTruthTable(zoneId) {
+    var vars = (state.view === 'p1') ? ['A'] : activeVars();
+    var fnId = sandboxFn();
+    var rows = allRows(fnId, vars);
+    var cur = vars.map(function (v) { return state.sw[v]; }).join('');
+    var head = vars.map(function (v) { return '<th>' + v + '</th>'; }).join('') + '<th>S</th>';
+    var body = rows.map(function (r, i) {
+      var isCur = r.v.join('') === cur;
+      return '<tr data-row="' + i + '" data-combo="' + r.v.join('') + '" data-out="' + r.o + '"' +
+        (isCur ? ' class="cur"' : '') + '>' +
+        r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
+        '<td class="out">' + r.o + '</td></tr>';
+    }).join('');
+    document.getElementById(zoneId).innerHTML =
+      '<thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody>';
+  }
+
+  /* Mise à jour ciblée : pas de perte de focus, pas de redémarrage d'animation */
+  function updateLive() {
+    var vars = (state.view === 'p1') ? ['A'] : activeVars();
+    var fnId = sandboxFn();
+    var f = FUNCS[fnId];
+    var combo = vars.map(function (v) { return state.sw[v]; }).join('');
+    var out = evalFn(fnId, vars.map(function (v) { return state.sw[v]; }));
+
+    /* interrupteurs */
+    Array.prototype.forEach.call(document.querySelectorAll('.switch'), function (b) {
+      var v = b.getAttribute('data-sw');
+      var on = vars.indexOf(v) >= 0;
+      b.disabled = !on;
+      b.setAttribute('aria-checked', state.sw[v] ? 'true' : 'false');
+      b.querySelector('.sw-state').textContent = state.sw[v];
+    });
+
+    /* contacts du schéma */
+    Array.prototype.forEach.call(document.querySelectorAll('#circuit .contact'), function (g) {
+      var v = g.getAttribute('data-contact');
+      /* contact travail : fermé si la variable vaut 1 ; contact repos (NON) : fermé si elle vaut 0 */
+      var closed = (fnId === 'NON') ? (state.sw[v] === 0) : (state.sw[v] === 1);
+      g.classList.toggle('closed', !!closed);
+    });
+
+    var circ = document.getElementById('circuit');
+    if (circ) {
+      circ.setAttribute('data-lit', out ? '1' : '0');
+      circ.classList.toggle('live', !!out);
+    }
+    var lamp = document.getElementById('lampG');
+    if (lamp) lamp.classList.toggle('lit', !!out);
+
+    /* table de vérité */
+    Array.prototype.forEach.call(document.querySelectorAll('#ttZone tbody tr'), function (tr) {
+      tr.classList.toggle('cur', tr.getAttribute('data-combo') === combo);
+    });
+
+    /* ligne d'état */
+    var line = document.getElementById('stateLine');
+    if (line) {
+      line.innerHTML = vars.map(function (v) { return v + ' = <b>' + state.sw[v] + '</b>'; }).join(' · ') +
+        ' &nbsp;⟹&nbsp; S = <b>' + out + '</b> ' + (out ? '— lampe allumée' : '— lampe éteinte');
+    }
+    updateStats();
+    scheduleResize();
+  }
+
+  /* =====================================================================
+     7. EXERCICES
+     ===================================================================== */
+  function renderExerciseInto(createNew) {
+    var zone = document.getElementById('exoZone');
+    if (!zone) return;
+    if (createNew && !state.ex) state.ex = newCombiExercise();
+    zone.innerHTML = renderExercise();
+    wireExercise();
+  }
+
+  function wireExercise() {
+    var ex = state.ex;
+    if (!ex) return;
+    if (ex.kind === 'ident') {
+      Array.prototype.forEach.call(document.querySelectorAll('#choicesExo button'), function (b) {
+        b.addEventListener('click', function () {
+          var v = Number(b.getAttribute('data-ans'));
+          ex.picked = v; ex.done = true; ex.ok = (v === ex.lit);
+          if (ex.ok) state.score++;
+          renderExerciseInto(false);
+          updateStats();
+        });
+      });
+      var nx1 = document.getElementById('btnExoNext');
+      if (nx1) nx1.addEventListener('click', function () { state.ex = newIdentExercise(); renderExerciseInto(false); });
+      return;
+    }
+    var table = document.getElementById('ttExo');
+    if (table && !ex.done) {
+      Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function (tr) {
+        tr.addEventListener('click', function () {
+          var i = Number(tr.getAttribute('data-row'));
+          ex.sel[i] = !ex.sel[i];
+          tr.classList.toggle('sel', !!ex.sel[i]);
+        });
+      });
+      var ok = document.getElementById('btnExoOk');
+      if (ok) ok.addEventListener('click', function () { checkCombi(ex, true); renderExerciseInto(false); updateStats(); });
+    }
+    var next = document.getElementById('btnExoNext');
+    if (next) next.addEventListener('click', function () { state.ex = newCombiExercise(); renderExerciseInto(false); });
+  }
+
+  function checkCombi(ex, countPoints) {
+    var expected = onesOf(ex.fn, ex.vars);
+    var given = [];
+    Object.keys(ex.sel).forEach(function (k) { if (ex.sel[k]) given.push(k); });
+    var rows = allRows(ex.fn, ex.vars);
+    given = given.map(function (i) { return rows[Number(i)].v.join(''); }).sort();
+    expected = expected.slice().sort();
+    ex.done = true;
+    ex.ok = given.length === expected.length && given.every(function (v, i) { return v === expected[i]; });
+    if (ex.ok && countPoints) state.score++;
+    return ex.ok;
+  }
+
+  /* =====================================================================
+     8. DÉFI
+     ===================================================================== */
+  function startDefi() {
+    state.defi = {
+      total:10, index:0, correct:0, streak:0, best:0, errors:[], asked:{},
+      startedAt:Date.now(), finished:false, q:null
+    };
+    state.defi.q = newDefiQuestion();
+  }
+
+  function newDefiQuestion() {
+    for (var t = 0; t < 60; t++) {
+      var type = Math.random() < 0.5 ? 'combi' : 'qcm';
+      var pool = [
+        { fn:'NON', vars:['A'] },
+        { fn:'ET',  vars:['A','B'] },
+        { fn:'ET',  vars:['A','B','C'] },
+        { fn:'OU',  vars:['A','B'] },
+        { fn:'OU',  vars:['A','B','C'] }
+      ];
+      var p = pool[Math.floor(Math.random() * pool.length)];
+      var key = type + '|' + p.fn + '|' + p.vars.join('');
+      if (state.defi.asked[key]) continue;
+      state.defi.asked[key] = true;
+      if (type === 'combi') return { kind:'combi', fn:p.fn, vars:p.vars, sel:{}, done:false, ok:false };
+
+      /* QCM : 4 équations, une seule correcte (tables différentes) */
+      var good = FUNCS[p.fn].eq(p.vars);
+      var cands = [];
+      ['ET','OU'].forEach(function (id) {
+        if (id !== p.fn) cands.push(FUNCS[id].eq(p.vars));
+      });
+      p.vars.forEach(function (v) { cands.push('S = ' + bar(v)); });
+      var seen = {}; seen[good] = true;
+      var wrong = [];
+      shuffle(cands).forEach(function (c) { if (!seen[c] && wrong.length < 3) { seen[c] = true; wrong.push(c); } });
+      if (wrong.length < 3) continue;
+      var choices = [{ html:good, ok:true }].concat(wrong.map(function (w) { return { html:w, ok:false }; }));
+      return { kind:'qcm', fn:p.fn, vars:p.vars, choices:shuffleChoices(choices), done:false, ok:false, picked:-1,
+               key:key };
+    }
+    return { kind:'combi', fn:'ET', vars:['A','B'], sel:{}, done:false, ok:false };
+  }
+
+  function wireDefi() {
+    var d = state.defi;
+    if (!d || d.finished) {
+      var rp = document.getElementById('btnDefiReplay');
+      if (rp) rp.addEventListener('click', function () { startDefi(); render(); });
+      return;
+    }
+    var q = d.q;
+    var table = document.getElementById('ttDefi');
+    if (q.kind === 'combi' && table && !q.done) {
+      Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function (tr) {
+        tr.addEventListener('click', function () {
+          var i = Number(tr.getAttribute('data-row'));
+          q.sel[i] = !q.sel[i];
+          tr.classList.toggle('sel', !!q.sel[i]);
+        });
+      });
+      document.getElementById('btnDefiOk').addEventListener('click', function () {
+        var okNow = checkCombi(q, false);
+        finishDefiQuestion(okNow);
+      });
+    }
+    if (q.kind === 'qcm' && !q.done) {
+      Array.prototype.forEach.call(document.querySelectorAll('#choicesDefi button'), function (b, i) {
+        b.addEventListener('click', function () {
+          q.picked = i;
+          q.done = true;
+          q.ok = q.choices[i].ok;
+          finishDefiQuestion(q.ok);
+        });
+      });
+    }
+    var nx = document.getElementById('btnDefiNext');
+    if (nx) nx.addEventListener('click', function () {
+      var d2 = state.defi;
+      d2.index++;
+      if (d2.index >= d2.total) { d2.finished = true; render(); return; }
+      d2.q = newDefiQuestion();
+      render();
+    });
+  }
+
+  function finishDefiQuestion(ok) {
+    var d = state.defi, q = d.q;
+    if (q.scored) return;
+    q.scored = true;
+    q.ok = ok;
+    if (ok) {
+      d.correct++;
+      d.streak++;
+      if (d.streak > d.best) d.best = d.streak;
+    } else {
+      d.streak = 0;
+      d.errors.push(FUNCS[q.fn].eq(q.vars) + ' &nbsp;— entrées ' + q.vars.join(', '));
+    }
+    render();
+  }
+
+  /* =====================================================================
+     9. MÉLANGE (bonne réponse jamais deux fois de suite à la même place)
+     ===================================================================== */
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function correctIndex(arr) {
+    for (var i = 0; i < arr.length; i++) { if (arr[i].ok) return i; }
+    return -1;
+  }
+  function shuffleChoices(choices) {
+    var arr = choices.slice(), ci = -1;
+    for (var t = 0; t < 12; t++) {
+      shuffle(arr);
+      ci = correctIndex(arr);
+      if (ci < 0 || ci !== state.lastCorrectPos) break;
+    }
+    if (ci === state.lastCorrectPos && arr.length > 1) {
+      var sw = (ci + 1) % arr.length, tmp = arr[ci];
+      arr[ci] = arr[sw]; arr[sw] = tmp; ci = sw;
+    }
+    state.lastCorrectPos = ci;
+    return arr;
+  }
+
+  /* =====================================================================
+     10. ÉVÉNEMENTS GLOBAUX
+     ===================================================================== */
+  el.view.addEventListener('click', function (ev) {
+    var b = ev.target.closest ? ev.target.closest('button') : null;
+
+    /* navigation */
+    if (b && b.hasAttribute('data-goto')) { state.view = b.getAttribute('data-goto'); render(); return; }
+    /* interrupteurs */
+    if (b && b.hasAttribute('data-sw')) {
+      var v = b.getAttribute('data-sw');
+      state.sw[v] = state.sw[v] ? 0 : 1;
+      updateLive();
+      return;
+    }
+    /* choix de fonction */
+    if (b && b.hasAttribute('data-fn')) {
+      state.fn = b.getAttribute('data-fn');
+      if (FUNCS[state.fn].maxVars === 1) state.third = false;
+      buildSandbox(true); updateLive();
+      return;
+    }
+    if (b && b.hasAttribute('data-third')) {
+      state.third = !state.third;
+      buildSandbox(true); updateLive();
+      return;
+    }
+    /* la table de vérité pilote le montage */
+    var tr = ev.target.closest ? ev.target.closest('tr[data-combo]') : null;
+    if (tr) {
+      var combo = tr.getAttribute('data-combo');
+      (state.view === 'p1' ? ['A'] : activeVars()).forEach(function (v, i) {
+        state.sw[v] = Number(combo.charAt(i));
+      });
+      updateLive();
+    }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.mode-btn'), function (b) {
+    b.addEventListener('click', function () {
+      state.view = b.getAttribute('data-view');
+      state.ex = null;
+      render();
+    });
+  });
+
+  el.reset.addEventListener('click', function () {
+    state.score = 0;
+    state.sw = {A:0,B:0,C:0};
+    state.third = false;
+    state.ex = null;
+    state.defi = null;
+    if (state.view === 'defi') startDefi();
+    render();
+  });
+
+  /* hauteur automatique de l'iframe d'intégration */
+  function notifyHeight() {
+    try {
+      if (window.parent === window) return;
+      window.parent.postMessage({ type:'iframe-resize', id:'logique', height:document.body.scrollHeight }, '*');
+    } catch (e) {}
+  }
+  var resizeTimer = null;
+  function scheduleResize() { clearTimeout(resizeTimer); resizeTimer = setTimeout(notifyHeight, 60); }
+  window.addEventListener('resize', scheduleResize);
+  window.addEventListener('load', scheduleResize);
+
+  render();
+})();
+</script>
+</body>
+</html>
