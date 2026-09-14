@@ -111,6 +111,7 @@
   .lamp.lit .lcross{stroke:var(--card)}
 
   .gate{width:100%;max-width:210px;height:auto;display:block;margin:0 auto;color:var(--ink)}
+  .sym-bloc{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px;margin:6px 0 10px}
   .gbox{fill:none;stroke:currentColor;stroke-width:2}
   .gw{stroke:currentColor;stroke-width:2}
   .gbub{fill:var(--card);stroke:currentColor;stroke-width:2}
@@ -457,6 +458,17 @@
     return s;
   }
 
+  /* Enoncé du montage, sans nommer la fonction : à l'élève de traduire */
+  function montageText(fnId, varsArr) {
+    if (fnId === 'NON')
+      return 'Le contact commandé par A est un <b>contact au repos</b> : il est fermé quand A = 0.';
+    if (fnId === 'ET')
+      return 'Les contacts commandés par ' + varsArr.join(', ') + ' sont branchés en <b>série</b> : ' +
+             'le courant doit traverser tous les contacts.';
+    return 'Les contacts commandés par ' + varsArr.join(', ') + ' sont branchés en <b>parallèle</b> : ' +
+           'il suffit qu\'un seul soit fermé.';
+  }
+
   function lampSym(x, y) {
     return '<g class="lamp" id="lampG">' +
       '<circle class="lbulb" cx="' + x + '" cy="' + y + '" r="13"/>' +
@@ -705,9 +717,16 @@
           '<span class="title">' + (q.ok ? '✅ Exact !' : '❌ Raté') + '</span>La fonction était <b>' + f.eq(q.vars) +
           '</b> : allumée pour <b>' + onesOf(q.fn, q.vars).join(', ') + '</b>. ' + f.why + '</div>'
         : '';
+      var enonce = q.given === 'equation'
+        ? 'la sortie est donnée par l\'équation <b>' + f.eq(q.vars) + '</b>.'
+        : (q.given === 'montage'
+            ? montageText(q.fn, q.vars)
+            : 'le symbole normalisé ci-dessous décrit la fonction câblée sur la lampe.');
       return '<section class="card">' + head +
         '<div class="prompt"><h2>Pour quelles combinaisons la sortie S vaut-elle 1 ?</h2>' +
-        '<p class="lead">Coche les lignes concernées, puis valide.</p></div>' +
+        '<p class="lead"><b>Énoncé —</b> ' + enonce + '</p>' +
+        (q.given === 'symbol' ? '<div class="sym-bloc">' + svgGate(q.fn, q.vars) + '</div>' : '') +
+        '<p class="lead">Coche les lignes de la table pour lesquelles S = 1, puis valide.</p></div>' +
         '<table class="tt" id="ttDefi"><thead><tr>' + th + '</tr></thead><tbody>' + tb + '</tbody></table>' +
         fb1 +
         '<div class="actions"><button class="primary" id="btnDefiOk"' + (q.done ? ' style="display:none"' : '') + '>Valider</button>' +
@@ -1084,7 +1103,10 @@
       var key = type + '|' + p.fn + '|' + p.vars.join('');
       if (state.defi.asked[key]) continue;
       state.defi.asked[key] = true;
-      if (type === 'combi') return { kind:'combi', fn:p.fn, vars:p.vars, sel:{}, done:false, ok:false };
+      if (type === 'combi') return {
+        kind:'combi', fn:p.fn, vars:p.vars, sel:{}, done:false, ok:false,
+        given:['equation','montage','symbol'][Math.floor(Math.random() * 3)]
+      };
 
       /* QCM : 4 équations, une seule correcte (tables différentes) */
       var good = FUNCS[p.fn].eq(p.vars);
@@ -1101,7 +1123,7 @@
       return { kind:'qcm', fn:p.fn, vars:p.vars, choices:shuffleChoices(choices), done:false, ok:false, picked:-1,
                key:key };
     }
-    return { kind:'combi', fn:'ET', vars:['A','B'], sel:{}, done:false, ok:false };
+    return { kind:'combi', fn:'ET', vars:['A','B'], sel:{}, done:false, ok:false, given:'equation' };
   }
 
   function wireDefi() {
