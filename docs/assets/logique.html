@@ -687,6 +687,9 @@
     if (d.finished) return renderDefiEnd();
     var q = d.q;
     var head = '<span class="qkind">Défi · question ' + (d.index + 1) + ' / ' + d.total + '</span>';
+    var nextLabel = (d.index + 1 >= d.total) ? 'Voir le résultat 🏁' : 'Question suivante ▶';
+    var nextBtn = '<button class="primary" id="btnDefiNext"' + (q.done ? '' : ' style="display:none"') +
+      '>' + nextLabel + '</button>';
 
     if (q.kind === 'combi') {
       var f = FUNCS[q.fn];
@@ -708,7 +711,7 @@
         '<table class="tt" id="ttDefi"><thead><tr>' + th + '</tr></thead><tbody>' + tb + '</tbody></table>' +
         fb1 +
         '<div class="actions"><button class="primary" id="btnDefiOk"' + (q.done ? ' style="display:none"' : '') + '>Valider</button>' +
-        '<button class="primary" id="btnDefiNext" style="display:none">Question suivante ▶</button></div>' +
+        nextBtn + '</div>' +
         '</section>';
     }
 
@@ -738,7 +741,7 @@
       '<table class="tt" id="ttDefi"><thead><tr>' + th2 + '</tr></thead><tbody>' + tb2 + '</tbody></table>' +
       '<div class="choices" id="choicesDefi">' + choices + '</div>' +
       fb2 +
-      '<div class="actions"><button class="primary" id="btnDefiNext" style="display:none">Question suivante ▶</button></div>' +
+      '<div class="actions">' + nextBtn + '</div>' +
       '</section>';
   }
 
