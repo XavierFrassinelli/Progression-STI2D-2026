@@ -52,6 +52,7 @@ nav:
         - Exercice Chaîne d'Information & d'Énergie: chaine_info/app.md
         - Exercice programme sti2d: chaine_info/exercices.md
         - PFS : chaine_info/Mechanics.md
+        - Logique combinatoire : chaine_info/logique.md
   - Terminale: Terminale.md
   - Ressources:
     - Ressources: Ressources.md
