@@ -358,6 +358,31 @@
     return pick(NICE);
   }
 
+  /* Position de la bonne réponse dans une liste de propositions */
+  function correctIndex(arr) {
+    for (var i = 0; i < arr.length; i++) { if (arr[i].ok) return i; }
+    return -1;
+  }
+
+  /* Mélange les propositions en évitant que la bonne réponse retombe
+     exactement à la même place que dans la question précédente. */
+  function shuffleChoices(choices) {
+    var arr = choices.slice();
+    var ci = -1;
+    for (var t = 0; t < 12; t++) {
+      shuffle(arr);
+      ci = correctIndex(arr);
+      if (ci < 0 || ci !== state.lastCorrectPos) break;
+    }
+    if (ci === state.lastCorrectPos && arr.length > 1) {
+      var sw = (ci + 1) % arr.length;
+      var tmp = arr[ci]; arr[ci] = arr[sw]; arr[sw] = tmp;
+      ci = sw;
+    }
+    state.lastCorrectPos = ci;
+    return arr;
+  }
+
   function explainConvert(q) {
     var li = [];
     var rel = [];
@@ -450,7 +475,7 @@
     q.badge = 'QCM · égalité';
     q.recap = 'Convertir ' + decFR(value) + ' ' + p.from + ' → ' + decFR(answer) + ' ' + p.to;
     q.explain = explainConvert(q);
-    q.choices = shuffle(choices);
+    q.choices = shuffleChoices(choices);
     return q;
   }
 
@@ -501,7 +526,7 @@
         '<li>On décale la virgule pour obtenir un nombre entre 1 et 10 : ' + decFR(str) + ' → ' + decFR(sciParts(str)[0]) + '</li>' +
         '<li>Le nombre de rangs donne l\'exposant : <b>' + sciParts(str)[1] + '</b></li>' +
         '<li>Résultat : <b>' + sciHTML(str) + ' ' + u[0] + '</b></li></ul>';
-      q.choices = shuffle(choices);
+      q.choices = shuffleChoices(choices);
       return q;
     }
     return null;
@@ -573,7 +598,7 @@
       badge: 'Préfixe · puissance',
       recap: '1 ' + u[0] + ' = 10<sup>' + p + '</sup> ' + fam.base,
       explain: '<ul class="steps">' + steps.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ul>',
-      choices: shuffle(choices)
+      choices: shuffleChoices(choices)
     };
   }
 
@@ -590,6 +615,7 @@
     best: 0,
     asked: {},
     errors: [],
+    lastCorrectPos: -1,
     question: null,
     answered: false,
     hinted: false,
