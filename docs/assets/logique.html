@@ -112,6 +112,9 @@
 
   .gate{width:100%;max-width:210px;height:auto;display:block;margin:0 auto;color:var(--ink)}
   .sym-bloc{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px;margin:6px 0 10px}
+  .deriv{font-size:.95rem;font-weight:700;margin:2px 0 10px;line-height:1.6;font-variant-numeric:tabular-nums}
+  .mini{font-size:.72em;color:var(--muted);font-weight:600}
+  .choices.two{grid-template-columns:1fr 1fr}
   .gbox{fill:none;stroke:currentColor;stroke-width:2}
   .gw{stroke:currentColor;stroke-width:2}
   .gbub{fill:var(--card);stroke:currentColor;stroke-width:2}
@@ -246,6 +249,8 @@
       <button class="mode-btn active" data-view="parcours" role="tab">Parcours</button>
       <button class="mode-btn" data-view="p1" role="tab">Palier 1 · 0 et 1</button>
       <button class="mode-btn" data-view="p2" role="tab">Palier 2 · NON, ET, OU</button>
+      <button class="mode-btn" data-view="p3" role="tab">Palier 3 · Canonique</button>
+      <button class="mode-btn" data-view="p4" role="tab">Palier 4 · Énoncés</button>
       <button class="mode-btn" data-view="defi" role="tab">Défi</button>
       <button class="mode-btn" data-view="memo" role="tab">Mémo</button>
     </div>
@@ -312,10 +317,10 @@
       resume:'Une information en tout ou rien : la variable logique, ses deux états, la table de vérité.' },
     { n:2, view:'p2', titre:'NON, ET, OU', tag:'Bases', dispo:true,
       resume:'Les trois fonctions de base : symbole normalisé, équation, table, schéma à contacts.' },
-    { n:3, view:'p3', titre:'Du schéma à l\'équation', tag:'Avancé', dispo:false,
-      resume:'Trois variables, table complète et forme canonique (somme de produits).' },
-    { n:4, view:'p4', titre:'Du français à la logique', tag:'Avancé', dispo:false,
-      resume:'Traduire un cahier des charges en variables, table et équation.' },
+    { n:3, view:'p3', titre:'Du schéma à l\'équation', tag:'Avancé', dispo:true,
+      resume:'Forme canonique : un produit par ligne à 1, et l\'écriture condensée Σ m(...).' },
+    { n:4, view:'p4', titre:'Du français à la logique', tag:'Avancé', dispo:true,
+      resume:'Traduire un cahier des charges en variables, en équation, puis vérifier un cas.' },
     { n:5, view:'p5', titre:'NON-ET et NON-OU', tag:'Avancé', dispo:false,
       resume:'Les fonctions universelles : tout construire avec une seule porte.' },
     { n:6, view:'p6', titre:'OU-exclusif', tag:'Avancé', dispo:false,
@@ -486,6 +491,7 @@
     fn:'ET', third:false,
     sw:{A:0,B:0,C:0},
     score:0,
+    f3:0,
     /* exercice de la vue courante */
     ex:null,
     /* défi */
@@ -659,6 +665,8 @@
     var ex = state.ex;
     if (!ex) return '';
     if (ex.kind === 'ident') return renderIdentExercise(ex);
+    if (ex.kind === 'sigma') return renderSigmaExercise(ex);
+    if (ex.kind === 'scenario') return renderScenarioExercise(ex);
     var f = FUNCS[ex.fn];
     var rows = allRows(ex.fn, ex.vars);
     var head = ex.vars.map(function (v) { return '<th>' + v + '</th>'; }).join('') + '<th>S</th>';
@@ -861,6 +869,315 @@
   }
 
   /* =====================================================================
+     5 bis. PALIER 3 — de l'équation à la forme canonique
+     ===================================================================== */
+  var VARS3 = ['A','B','C'];
+
+  var FONC3 = [
+    { id:'secu', label:'Sécurité',
+      eq: function () { return 'S = A·B + C'; },
+      calc: function (v) { return (v[0] && v[1]) || v[2] ? 1 : 0; },
+      contexte:'Le moteur (S) tourne si l\'autorisation A et le capteur B sont actifs, ou si le mode manuel C est engagé.' },
+    { id:'maj', label:'Majorité (2 sur 3)',
+      eq: function () { return 'S = A·B + B·C + A·C'; },
+      calc: function (v) { return (v[0] + v[1] + v[2]) >= 2 ? 1 : 0; },
+      contexte:'Un voyant (S) s\'allume si au moins deux des trois capteurs A, B, C sont actifs.' },
+    { id:'une', label:'Exactement une entrée',
+      eq: function () { return 'S = A·' + bar('B') + '·' + bar('C') + ' + ' + bar('A') + '·B·' + bar('C') + ' + ' + bar('A') + '·' + bar('B') + '·C'; },
+      calc: function (v) { return (v[0] + v[1] + v[2]) === 1 ? 1 : 0; },
+      contexte:'S = 1 si exactement un des trois capteurs A, B, C est actif.' },
+    { id:'parite', label:'Parité',
+      eq: function () { return 'S = A ⊕ B ⊕ C'; },
+      calc: function (v) { return ((v[0] + v[1] + v[2]) % 2) ? 1 : 0; },
+      contexte:'S = 1 si le nombre de capteurs actifs est impair.' },
+    { id:'et3', label:'Toutes les entrées',
+      eq: function () { return 'S = A·B·C'; },
+      calc: function (v) { return (v[0] && v[1] && v[2]) ? 1 : 0; },
+      contexte:'S = 1 seulement si les trois capteurs sont actifs.' },
+    { id:'ou3', label:'Au moins une entrée',
+      eq: function () { return 'S = A + B + C'; },
+      calc: function (v) { return (v[0] || v[1] || v[2]) ? 1 : 0; },
+      contexte:'S = 1 dès qu\'au moins un capteur est actif.' }
+  ];
+
+  function f3courante() { return FONC3[state.f3] || FONC3[0]; }
+
+  function lignes3() {
+    var out = [], i, k, v;
+    for (i = 0; i < 8; i++) {
+      v = [];
+      for (k = 0; k < 3; k++) { v.push((i >> (2 - k)) & 1); }
+      out.push({ i:i, v:v, o:f3courante().calc(v) });
+    }
+    return out;
+  }
+
+  /* Mintermes : les lignes où S = 1 */
+  function mintermes(fnc) {
+    return lignes3().filter(function (r) { return fnc.calc(r.v) === 1; })
+      .map(function (r) { return { i:r.i, v:r.v }; });
+  }
+  function listeMintermes(fnc) {
+    return mintermes(fnc).map(function (r) { return r.i; });
+  }
+  /* Un produit par ligne à 1 : variable à 1 → lettre, variable à 0 → lettre barrée */
+  function produitsCanoniques(fnc) {
+    return mintermes(fnc).map(function (r) {
+      return r.v.map(function (x, k) { return x ? VARS3[k] : bar(VARS3[k]); }).join('·');
+    });
+  }
+  function eqCanonique(fnc) {
+    var m = mintermes(fnc);
+    if (!m.length) return 'S = 0';
+    if (m.length === 8) return 'S = 1';
+    return 'S = ' + produitsCanoniques(fnc).join(' + ');
+  }
+  function eqSigma(liste) {
+    if (!liste.length) return 'S = 0';
+    if (liste.length === 8) return 'S = 1';
+    return 'S = Σ m(' + liste.join(', ') + ')';
+  }
+
+  function renderPalier3() {
+    var f = f3courante(), m = mintermes(f);
+    var picker = FONC3.map(function (x) {
+      return '<button data-f3="' + x.id + '"' + (x.id === f.id ? ' class="active"' : '') + '>' + x.label + '</button>';
+    }).join('');
+    var lignes = lignes3();
+    var table = '<table class="tt" id="tt3"><thead><tr><th>A</th><th>B</th><th>C</th><th>S</th></tr></thead><tbody>' +
+      lignes.map(function (r) {
+        return '<tr class="' + (r.o ? 'one' : '') + '">' +
+          r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
+          '<td class="out">' + r.o + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    var lignes1 = m.length
+      ? m.map(function (r) { return r.v.join('') + ' <span class="mini">m' + r.i + '</span>'; }).join(' &nbsp;·&nbsp; ')
+      : 'aucune ligne à 1';
+    var prod = m.length
+      ? produitsCanoniques(f).join('<br>')
+      : '—';
+
+    return '<section class="card">' +
+      '<span class="qkind">Palier 3 · Avancé</span>' +
+      '<h2>De l\'équation à la forme canonique</h2>' +
+      '<p class="lead">Toute fonction logique s\'écrit comme une <b>somme de produits</b> des entrées : ' +
+      'un produit — un <b>minterme</b> — par ligne où S = 1. C\'est la <b>forme canonique</b>.</p>' +
+      '<div class="fn-picker" id="f3Picker">' + picker + '</div>' +
+      '<p class="lead">' + f.contexte + '</p>' +
+      '<div class="board">' +
+        '<div class="panel"><h3>La table de vérité</h3>' + table +
+        '<p class="eq-cap">Les lignes surlignées sont les mintermes (S = 1).</p></div>' +
+        '<div class="panel"><h3>L\'écriture canonique</h3>' +
+        '<p class="eq-cap">Équation de départ</p>' +
+        '<p class="eq">' + f.eq() + '</p>' +
+        '<p class="eq-cap">Lignes à 1</p><p class="deriv">' + lignes1 + '</p>' +
+        '<p class="eq-cap">Un produit par ligne</p><p class="deriv">' + prod + '</p>' +
+        '<p class="eq-cap">Somme de ces produits : forme canonique</p>' +
+        '<p class="eq">' + eqCanonique(f) + '</p>' +
+        '<p class="eq-cap">Écriture condensée</p>' +
+        '<p class="eq">' + eqSigma(listeMintermes(f)) + '</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="why"><b>À retenir —</b> la forme canonique est <b>toujours vraie</b>, mais rarement la plus simple : ' +
+      'ici elle compte <b>' + m.length + ' produit' + (m.length > 1 ? 's' : '') + '</b> (un par ligne où S = 1), ' +
+      'alors que l\'équation de départ est bien plus courte. La simplifier avec les équivalences remarquables ' +
+      '(De Morgan, absorption) sera l\'objet du <b>palier 7</b>.</div>' +
+      '</section>' +
+      '<section class="card" id="exoZone"></section>';
+  }
+
+  /* ---------- Exercice du palier 3 : écriture condensée Σ m(...) ---------- */
+  function newSigmaExercise() {
+    var f = FONC3[Math.floor(Math.random() * FONC3.length)];
+    var m = listeMintermes(f);
+    var comp = [];
+    for (var i = 0; i < 8; i++) { if (m.indexOf(i) < 0) comp.push(i); }
+    var cands = [];
+    if (comp.length && comp.length < 8) cands.push({ t:'complement', l:comp });
+    if (m.length > 1) cands.push({ t:'manquant', l:m.slice(1) });
+    if (comp.length) cands.push({ t:'en trop', l:m.concat([comp[0]]).sort(function (a, b) { return a - b; }) });
+    cands.push({ t:'decalage', l:m.map(function (x) { return (x + 1) % 8; }).sort(function (a, b) { return a - b; }) });
+    cands.push({ t:'inverse', l:[7 - m[0]] });
+    var seen = {}; seen[eqSigma(m)] = true;
+    var wrong = [];
+    shuffle(cands).forEach(function (c) {
+      var s = eqSigma(c.l);
+      if (!seen[s] && wrong.length < 3) { seen[s] = true; wrong.push({ html:s, ok:false }); }
+    });
+    var t = 0;
+    while (wrong.length < 3 && t < 20) {
+      t++;
+      var r = Math.floor(Math.random() * 8), s2 = eqSigma([r]);
+      if (!seen[s2]) { seen[s2] = true; wrong.push({ html:s2, ok:false }); }
+    }
+    return {
+      kind:'sigma', f:f,
+      options: shuffleChoices([{ html:eqSigma(m), ok:true }].concat(wrong)),
+      picked:-1, done:false, ok:false
+    };
+  }
+
+  function renderSigmaExercise(ex) {
+    var lignes = lignes3();
+    var table = '<table class="tt" id="ttSigma"><thead><tr><th>A</th><th>B</th><th>C</th><th>S</th></tr></thead><tbody>' +
+      lignes.map(function (r) {
+        return '<tr>' + r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
+          '<td class="out">?</td></tr>';
+      }).join('') + '</tbody></table>';
+    var opts = ex.options.map(function (o, i) {
+      var cls = '';
+      if (ex.done) { if (o.ok) cls = 'ok'; else if (i === ex.picked) cls = 'ko'; }
+      return '<button data-opt="' + i + '"' + (cls ? ' class="' + cls + '"' : '') +
+        (ex.done ? ' disabled' : '') + '>' + o.html + '</button>';
+    }).join('');
+    var bonne = eqSigma(listeMintermes(ex.f));
+    var fb = ex.done
+      ? '<div class="feedback show ' + (ex.ok ? 'good' : 'bad') + '" data-verdict="' + (ex.ok ? 'ok' : 'ko') + '">' +
+        '<span class="title">' + (ex.ok ? '✅ Exact !' : '❌ Non : ' + bonne) + '</span>' +
+        'Avec <b>' + ex.f.eq() + '</b>, la sortie vaut 1 pour les lignes <b>' + listeMintermes(ex.f).join(', ') +
+        '</b>. La forme canonique est <b>' + eqCanonique(ex.f) + '</b>, soit ' + bonne + '.</div>'
+      : '';
+    return '<span class="qkind">Mini-exercice</span>' +
+      '<h2>Quelle est l\'écriture condensée de cette fonction ?</h2>' +
+      '<p class="lead">La fonction est donnée par <b>' + ex.f.eq() + '</b>. Complète la table (les lignes où S = 1 ' +
+      'sont les mintermes), puis choisis la bonne écriture condensée.</p>' +
+      table +
+      '<div class="choices" id="choicesExo">' + opts + '</div>' + fb +
+      '<div class="actions">' +
+      (ex.done ? '<button class="primary" id="btnExoNext">Nouvel exercice ▶</button>' : '') +
+      '</div>';
+  }
+
+  /* =====================================================================
+     5 ter. PALIER 4 — du français à la logique
+     ===================================================================== */
+  var SCENARIOS = [
+    { id:'portail', titre:'Portail automatique', vars:['A','B'],
+      enonce:'Le portail s\'ouvre (S = 1) si le <b>badge A</b> est validé <b>et</b> que le <b>bouton B</b> est pressé.',
+      options:[
+        { eq:'S = A·B', ok:true, calc:function (v) { return (v[0] && v[1]) ? 1 : 0; } },
+        { eq:'S = A + B',                     calc:function (v) { return (v[0] || v[1]) ? 1 : 0; } },
+        { eq:'S = A·' + bar('B'),             calc:function (v) { return (v[0] && !v[1]) ? 1 : 0; } },
+        { eq:'S = ' + bar('A') + '·B',        calc:function (v) { return (!v[0] && v[1]) ? 1 : 0; } }
+      ],
+      why:'« et » se traduit par <b>·</b> : les deux conditions doivent être vraies en même temps.' },
+    { id:'alarme', titre:'Alarme avec code', vars:['A','B','C'],
+      enonce:'L\'alarme sonne (S = 1) si le <b>détecteur A</b> est actif <b>ou</b> si le <b>contact B</b> est ouvert, ' +
+             '<b>sauf</b> si le <b>code C</b> est saisi.',
+      options:[
+        { eq:'S = (A + B)·' + bar('C'), ok:true, calc:function (v) { return ((v[0] || v[1]) && !v[2]) ? 1 : 0; } },
+        { eq:'S = A + B + ' + bar('C'),            calc:function (v) { return (v[0] || v[1] || !v[2]) ? 1 : 0; } },
+        { eq:'S = A·B·' + bar('C'),                calc:function (v) { return (v[0] && v[1] && !v[2]) ? 1 : 0; } },
+        { eq:'S = (A + B)·C',                      calc:function (v) { return ((v[0] || v[1]) && v[2]) ? 1 : 0; } }
+      ],
+      why:'« ou » → <b>+</b>, et « sauf si C » → on multiplie le tout par <b>' + bar('C') + '</b> : les parenthèses sont obligatoires.' },
+    { id:'ventilation', titre:'Ventilation', vars:['A','B','C'],
+      enonce:'La ventilation (S = 1) démarre si la <b>température A</b> est élevée <b>et</b> que le <b>système est en marche B</b>, ' +
+             '<b>ou</b> si le <b>bouton de secours C</b> est enfoncé.',
+      options:[
+        { eq:'S = A·B + C', ok:true, calc:function (v) { return ((v[0] && v[1]) || v[2]) ? 1 : 0; } },
+        { eq:'S = A·(B + C)',      calc:function (v) { return (v[0] && (v[1] || v[2])) ? 1 : 0; } },
+        { eq:'S = A + B·C',        calc:function (v) { return (v[0] || (v[1] && v[2])) ? 1 : 0; } },
+        { eq:'S = A·B·C',          calc:function (v) { return (v[0] && v[1] && v[2]) ? 1 : 0; } }
+      ],
+      why:'Le ET est prioritaire sur le OU : on écrit <b>A·B + C</b>, qui se calcule (A·B) + C.' },
+    { id:'tri', titre:'Tri de pièces', vars:['A','B','C'],
+      enonce:'La pièce est éjectée (S = 1) si le <b>capteur de couleur A</b> et le <b>capteur de taille B</b> sont actifs, ' +
+             '<b>sauf</b> si la pièce est <b>déjà marquée C</b>.',
+      options:[
+        { eq:'S = A·B·' + bar('C'), ok:true, calc:function (v) { return (v[0] && v[1] && !v[2]) ? 1 : 0; } },
+        { eq:'S = (A + B)·' + bar('C'),      calc:function (v) { return ((v[0] || v[1]) && !v[2]) ? 1 : 0; } },
+        { eq:'S = A·B + ' + bar('C'),        calc:function (v) { return ((v[0] && v[1]) || !v[2]) ? 1 : 0; } },
+        { eq:'S = A·B·C',                    calc:function (v) { return (v[0] && v[1] && v[2]) ? 1 : 0; } }
+      ],
+      why:'Deux conditions à réunir (<b>·</b>) et une condition à exclure (<b>·' + bar('C') + '</b>).' }
+  ];
+
+  function newScenarioExercise() {
+    var s = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
+    var ref = null;
+    for (var i = 0; i < s.options.length; i++) { if (s.options[i].ok) ref = s.options[i].calc; }
+    return {
+      kind:'scenario', s:s, refCalc:ref,
+      options: shuffleChoices(s.options.map(function (o) { return { html:o.eq, ok:!!o.ok }; })),
+      picked:-1, ok:false, combo:null, attendu:0, rep:null, ok2:false
+    };
+  }
+
+  function renderScenarioExercise(ex) {
+    var s = ex.s;
+    var opts = ex.options.map(function (o, i) {
+      var cls = '';
+      if (ex.picked >= 0) { if (o.ok) cls = 'ok'; else if (i === ex.picked) cls = 'ko'; }
+      return '<button data-opt="' + i + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + o.html + '</button>';
+    }).join('');
+    var bonne = '';
+    for (var i = 0; i < ex.options.length; i++) { if (ex.options[i].ok) bonne = ex.options[i].html; }
+    var fb1 = ex.picked >= 0
+      ? '<div class="feedback show ' + (ex.ok ? 'good' : 'bad') + '" data-verdict="' + (ex.ok ? 'ok' : 'ko') + '">' +
+        '<span class="title">' + (ex.ok ? '✅ Bonne traduction !' : '❌ Ce n\'est pas la bonne équation') + '</span>' +
+        'L\'énoncé se traduit par <b>' + bonne + '</b>. ' + s.why + '</div>'
+      : '';
+
+    var step2 = '';
+    if (ex.ok) {
+      var b0 = '<button data-rep="0"' + (ex.rep === 0 ? (ex.attendu === 0 ? ' class="ok"' : ' class="ko"') : '') + '>Non, S = 0</button>';
+      var b1 = '<button data-rep="1"' + (ex.rep === 1 ? (ex.attendu === 1 ? ' class="ok"' : ' class="ko"') : '') + '>Oui, S = 1</button>';
+      var fb2 = ex.rep !== null
+        ? '<div class="feedback show ' + (ex.ok2 ? 'good' : 'bad') + '" data-verdict="' + (ex.ok2 ? 'ok' : 'ko') + '">' +
+          '<span class="title">' + (ex.ok2 ? '✅ Exact !' : '❌ Non') + '</span>' +
+          'Pour ' + s.vars.map(function (v, k) { return v + ' = ' + ex.combo[k]; }).join(', ') +
+          ', l\'équation donne <b>S = ' + ex.attendu + '</b>.</div>'
+        : '';
+      step2 = '<h3>2. Vérifier un cas particulier</h3>' +
+        '<p class="lead">Pour ' + s.vars.map(function (v, k) { return '<b>' + v + ' = ' + ex.combo[k] + '</b>'; }).join(', ') +
+        ', la sortie S vaut-elle 1 ?</p>' +
+        '<div class="choices two" id="choicesExo2">' + b0 + b1 + '</div>' + fb2;
+    }
+
+    var fini = ex.picked >= 0 && (!ex.ok || ex.rep !== null);
+    return '<span class="qkind">Mini-exercice</span>' +
+      '<h2>' + s.titre + '</h2>' +
+      '<p class="lead">' + s.enonce + '</p>' +
+      '<p class="eq-cap">Variables à utiliser : ' + s.vars.join(', ') + '</p>' +
+      '<h3>1. Traduire l\'énoncé en équation</h3>' +
+      '<div class="choices" id="choicesExo">' + opts + '</div>' + fb1 +
+      step2 +
+      '<div class="actions">' +
+      (fini ? '<button class="primary" id="btnExoNext">Nouveau scénario ▶</button>' : '') +
+      '</div>';
+  }
+
+  function renderPalier4() {
+    return '<section class="card">' +
+      '<span class="qkind">Palier 4 · Avancé</span>' +
+      '<h2>Du français à la logique</h2>' +
+      '<p class="lead">Un cahier des charges est écrit en français : il faut le traduire en variables, ' +
+      'en équation, puis en montage. C\'est le sens de lecture inverse de celui du palier 3.</p>' +
+      '<h3>La méthode</h3>' +
+      '<ol>' +
+      '<li>Nommer une <b>variable</b> par information d\'entrée (A, B, C…).</li>' +
+      '<li>Fixer la convention : que signifie <b>1</b> pour chaque variable ?</li>' +
+      '<li>Repérer les mots de la logique (tableau ci-dessous).</li>' +
+      '<li>Écrire l\'<b>équation</b>, en respectant la priorité de · sur + (sinon on met des parenthèses).</li>' +
+      '<li>Vérifier au moins un cas particulier avec la table de vérité.</li>' +
+      '</ol>' +
+      '<h3>Le vocabulaire</h3>' +
+      '<table class="tt" id="ttVoc">' +
+      '<thead><tr><th>Dans l\'énoncé</th><th>En logique</th></tr></thead>' +
+      '<tbody>' +
+      '<tr><td>… <b>et</b> … (les deux)</td><td><b>·</b></td></tr>' +
+      '<tr><td>… <b>ou</b> … (au moins l\'un)</td><td><b>+</b></td></tr>' +
+      '<tr><td>… <b>sauf si</b> … &nbsp;/&nbsp; … <b>pas</b> …</td><td>variable barrée</td></tr>' +
+      '<tr><td>… <b>mais pas les deux</b></td><td>⊕ (OU-exclusif, palier 6)</td></tr>' +
+      '</tbody></table>' +
+      '<div class="why"><b>Piège classique —</b> « sauf si C » ne se traduit pas par « + C » : ' +
+      'il faut <b>multiplier</b> le reste par ' + bar('C') + '.</div>' +
+      '</section>' +
+      '<section class="card" id="exoZone"></section>';
+  }
+
+  /* =====================================================================
      6. RENDU
      ===================================================================== */
   function render() {
@@ -868,6 +1185,8 @@
     if (state.view === 'parcours') html = viewParcours();
     else if (state.view === 'p1') { html = renderPalier1(); }
     else if (state.view === 'p2') { html = renderPalier2(); }
+    else if (state.view === 'p3') { html = renderPalier3(); }
+    else if (state.view === 'p4') { html = renderPalier4(); }
     else if (state.view === 'defi') html = viewDefi();
     else if (state.view === 'memo') html = viewMemo();
     el.view.innerHTML = html;
@@ -886,6 +1205,14 @@
       if (!state.ex || state.ex.kind !== 'combi') state.ex = newCombiExercise();
       renderExerciseInto(false);
     }
+    if (state.view === 'p3') {
+      if (!state.ex || state.ex.kind !== 'sigma') state.ex = newSigmaExercise();
+      renderExerciseInto(false);
+    }
+    if (state.view === 'p4') {
+      if (!state.ex || state.ex.kind !== 'scenario') state.ex = newScenarioExercise();
+      renderExerciseInto(false);
+    }
     if (state.view === 'defi') { wireDefi(); }
     updateStats();
     scheduleResize();
@@ -902,6 +1229,8 @@
     el.info.textContent = state.view === 'parcours' ? 'Parcours'
       : state.view === 'p1' ? 'Palier 1 · 0 et 1'
       : state.view === 'p2' ? 'Palier 2 · NON, ET, OU'
+      : state.view === 'p3' ? 'Palier 3 · forme canonique'
+      : state.view === 'p4' ? 'Palier 4 · du français à la logique'
       : state.view === 'defi' ? (state.defi ? 'Défi · question ' + Math.min(state.defi.index + 1, state.defi.total) + ' / ' + state.defi.total : 'Défi')
       : 'Mémo';
   }
@@ -1047,6 +1376,48 @@
       });
       var nx1 = document.getElementById('btnExoNext');
       if (nx1) nx1.addEventListener('click', function () { state.ex = newIdentExercise(); renderExerciseInto(false); });
+      return;
+    }
+    if (ex.kind === 'sigma') {
+      Array.prototype.forEach.call(document.querySelectorAll('#choicesExo button'), function (b) {
+        b.addEventListener('click', function () {
+          var i = Number(b.getAttribute('data-opt'));
+          ex.picked = i; ex.done = true; ex.ok = ex.options[i].ok;
+          if (ex.ok) state.score++;
+          renderExerciseInto(false); updateStats();
+        });
+      });
+      var nx3 = document.getElementById('btnExoNext');
+      if (nx3) nx3.addEventListener('click', function () { state.ex = newSigmaExercise(); renderExerciseInto(false); });
+      return;
+    }
+    if (ex.kind === 'scenario') {
+      Array.prototype.forEach.call(document.querySelectorAll('#choicesExo button'), function (b) {
+        b.addEventListener('click', function () {
+          if (ex.picked >= 0) return;
+          var i = Number(b.getAttribute('data-opt'));
+          ex.picked = i; ex.ok = !!ex.options[i].ok;
+          if (ex.ok) {
+            state.score++;
+            var c = [];
+            for (var k = 0; k < ex.s.vars.length; k++) { c.push(Math.random() < 0.5 ? 0 : 1); }
+            ex.combo = c;
+            ex.attendu = ex.refCalc(c);
+          }
+          renderExerciseInto(false); updateStats();
+        });
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('#choicesExo2 button'), function (b) {
+        b.addEventListener('click', function () {
+          if (ex.rep !== null) return;
+          ex.rep = Number(b.getAttribute('data-rep'));
+          ex.ok2 = (ex.rep === ex.attendu);
+          if (ex.ok2) state.score++;
+          renderExerciseInto(false); updateStats();
+        });
+      });
+      var nx4 = document.getElementById('btnExoNext');
+      if (nx4) nx4.addEventListener('click', function () { state.ex = newScenarioExercise(); renderExerciseInto(false); });
       return;
     }
     var table = document.getElementById('ttExo');
@@ -1238,6 +1609,13 @@
     if (b && b.hasAttribute('data-third')) {
       state.third = !state.third;
       buildSandbox(true); updateLive();
+      return;
+    }
+    if (b && b.hasAttribute('data-f3')) {
+      for (var i3 = 0; i3 < FONC3.length; i3++) {
+        if (FONC3[i3].id === b.getAttribute('data-f3')) state.f3 = i3;
+      }
+      render();
       return;
     }
     /* la table de vérité pilote le montage */
