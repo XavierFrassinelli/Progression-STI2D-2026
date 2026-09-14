@@ -293,8 +293,12 @@
 
   /* =====================================================================
      3. LECTURE D'UNE RÉPONSE ÉCRITE
-     Accepte : 450 | 0,45 | 4,5.10^3 | 4,5x10^3 | 4,5 × 10³ | 4.5e3 | 10^-3 | 450 mm
+     Accepte : 450 | 0,45 | 4,5.10^3 | 4,5x10^3 | 4,5 × 10³ | 4.5e3 | 10^(-3) | 450 mm
      ===================================================================== */
+  /* Exposant négatif écrit en ligne sans parenthèse (10^-3 ou 10-3) :
+     l'application accepte encore, mais on le signale à l'élève. */
+  var LIN_NEG = /10\s*\^?\s*-\s*\d/;
+
   function parseUserNumber(raw) {
     if (raw === null || raw === undefined) return null;
     var s = String(raw).toLowerCase().replace(/[\u00a0\u202f]/g, ' ').trim();
@@ -642,6 +646,7 @@
     var q = state.question;
     state.answered = false;
     state.hinted = false;
+    state.answerRaw = null;
     updateStats();
 
     var html = '';
@@ -656,7 +661,9 @@
         '<span class="unit">' + q.to + '</span>' +
         '<button class="primary" id="btnValidate" type="button">Valider</button>' +
         '</div>' +
-        '<p class="help">Écritures acceptées : <code>450</code> · <code>0,45</code> · <code>4,5.10^3</code> · <code>4,5e3</code> · <code>4,5 × 10³</code></p>';
+        '<p class="help">Écritures acceptées : <code>450</code> · <code>0,45</code> · <code>4,5.10^3</code> · <code>4,5e3</code> · <code>4,5 × 10<sup>3</sup></code><br>' +
+        'Exposant <b>négatif</b> : la parenthèse est <b>obligatoire</b> en écriture en ligne → <code>4,5.10^(-3)</code> ' +
+        '(ou, à la calculatrice, la touche <code>e</code> : <code>4,5e-3</code>).</p>';
     } else {
       html += '<div class="choices" id="choices">' + q.choices.map(function (c, i) {
         return '<button type="button" data-i="' + i + '">' + c.html + '</button>';
@@ -709,6 +716,7 @@
   function submitText() {
     var input = document.getElementById('ansInput');
     var val = parseUserNumber(input.value);
+    state.answerRaw = input.value;
     if (val === null) {
       var fb = document.getElementById('feedback');
       fb.className = 'feedback bad show';
@@ -760,7 +768,12 @@
     var head = ok
       ? '<span class="title">✅ Correct !' + (state.hinted ? ' (avec indice)' : '') + '</span>'
       : '<span class="title">❌ Réponse : ' + decFR(q.answer) + ' ' + q.to + '</span>';
-    fb.innerHTML = head + q.explain;
+    /* Rappel de notation : exposant négatif en ligne sans parenthèse */
+    var notation = (ok && typeof state.answerRaw === 'string' && LIN_NEG.test(state.answerRaw.toLowerCase()))
+      ? '<p class="tip">Notation : en écriture en ligne, l\'exposant négatif se met entre parenthèses → <b>4,5.10^(-3)</b>. ' +
+        '(À la calculatrice : touche <b>e</b>, soit <b>4,5e-3</b>.)</p>'
+      : '';
+    fb.innerHTML = head + q.explain + notation;
 
     var next = document.getElementById('btnNext');
     next.style.display = 'inline-block';
@@ -845,6 +858,19 @@
       'donc 1 m = 10<sup>6</sup> µm.<br>0,0035 m = 0,0035 × 10<sup>6</sup> = <b>3 500 µm</b> (6 rangs vers la droite).</div>' +
       '<div class="ex"><b>Exemple 3 —</b> 250 mL en L : 1 mL = 10<sup>-3</sup> L.<br>' +
       '250 mL = 250 × 10<sup>-3</sup> L = <b>0,25 L</b> (3 rangs vers la gauche).</div>' +
+
+      '<h2>Écrire une puissance de dix</h2>' +
+      '<table>' +
+      '<tr><th>Écriture</th><th>Exemple</th><th>Règle</th></tr>' +
+      '<tr><td>En exposant</td><td>4,5 × 10<sup>-3</sup></td>' +
+      '<td>Pas de parenthèse : l\'exposant est au-dessus, aucune ambiguïté.</td></tr>' +
+      '<tr><td>En ligne (texte, copier-coller)</td><td>4,5.10^(-3)</td>' +
+      '<td><b>Parenthèses obligatoires</b> dès que l\'exposant est négatif : <code>4,5.10^-3</code> est incorrect.</td></tr>' +
+      '<tr><td>Calculatrice / tableur</td><td>4,5e-3</td>' +
+      '<td>Touche <code>EE</code> ou <code>×10ˣ</code> : le <code>e</code> remplace « ×10^ ». Là aussi, l\'exposant négatif est protégé.</td></tr>' +
+      '</table>' +
+      '<div class="ex"><b>Et si on élève une puissance à une puissance ?</b> (10<sup>-3</sup>)<sup>2</sup> = 10<sup>-6</sup> : ' +
+      'les parenthèses sont indispensables, et on multiplie les exposants (-3 × 2 = -6).</div>' +
 
       '<h2>Longueurs, aires, volumes : attention aux carrés et aux cubes</h2>' +
       '<p>Pour une <b>aire</b> (m²), la puissance de dix est <b>doublée</b> par rapport aux longueurs ; ' +
