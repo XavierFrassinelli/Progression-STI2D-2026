@@ -92,7 +92,8 @@
   .panel > h3{margin-top:0}
   .circuit{width:100%;height:auto;color:var(--ink);transition:.2s}
   .wire{stroke:currentColor;stroke-width:2;fill:none}
-  .wire.live{stroke:var(--copper);stroke-dasharray:6 7;animation:flow .8s linear infinite}
+  /* le courant circule quand le circuit est fermé */
+  .circuit.live .wire{stroke:var(--copper);stroke-dasharray:6 7;animation:flow .8s linear infinite}
   @keyframes flow{to{stroke-dashoffset:-13}}
   .cdot{fill:currentColor}
   .blade{stroke:currentColor;stroke-width:2}
@@ -173,6 +174,11 @@
   table.tt tbody tr.one td.out{color:var(--ok);font-weight:800}
   table.tt tbody tr.sel{outline:2px solid var(--accent);outline-offset:-2px}
   table.tt td.out{font-weight:700}
+  /* tableaux de texte (vocabulaire, équivalences) */
+  table.voc{width:100%;border-collapse:collapse;font-size:.88rem}
+  table.voc th,table.voc td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
+  table.voc th{background:var(--primary-soft);color:var(--primary-2);font-weight:700}
+  table.voc td.verif{white-space:nowrap;color:var(--ok);font-weight:700}
 
   /* ---------- Bandeaux ---------- */
   .why{margin-top:12px;background:var(--primary-soft);color:var(--primary-2);border-radius:12px;padding:12px 14px;font-size:.9rem}
@@ -251,6 +257,8 @@
       <button class="mode-btn" data-view="p2" role="tab">Palier 2 · NON, ET, OU</button>
       <button class="mode-btn" data-view="p3" role="tab">Palier 3 · Canonique</button>
       <button class="mode-btn" data-view="p4" role="tab">Palier 4 · Énoncés</button>
+      <button class="mode-btn" data-view="p5" role="tab">Palier 5 · NON-ET/NON-OU</button>
+      <button class="mode-btn" data-view="p6" role="tab">Palier 6 · OU-exclusif</button>
       <button class="mode-btn" data-view="defi" role="tab">Défi</button>
       <button class="mode-btn" data-view="memo" role="tab">Mémo</button>
     </div>
@@ -309,6 +317,33 @@
       phrase:'La lampe s\'allume dès qu\'au moins une variable vaut 1.',
       why:'Les contacts sont branchés en <b>parallèle</b> : il suffit qu\'<b>un seul</b> soit fermé ' +
           'pour que le courant passe par cette branche.'
+    },
+    NAND: {
+      id:'NAND', label:'NON-ET', long:'NON-ET (NAND)', iec:'&', invert:true,
+      minVars:2, maxVars:3,
+      eq: function (v) { return 'S = ' + bar(v.join('·')); },
+      calc: function (v) { for (var i = 0; i < v.length; i++) { if (!v[i]) return 1; } return 0; },
+      phrase:'La lampe s\'éteint seulement si <b>toutes</b> les entrées valent 1.',
+      why:'C\'est un <b>ET suivi d\'un inverseur</b> : le petit cercle (« bulle d\'inversion ») inverse ' +
+          'la sortie du ET.'
+    },
+    NOR: {
+      id:'NOR', label:'NON-OU', long:'NON-OU (NOR)', iec:'≥1', invert:true,
+      minVars:2, maxVars:3,
+      eq: function (v) { return 'S = ' + bar(v.join('+')); },
+      calc: function (v) { for (var i = 0; i < v.length; i++) { if (v[i]) return 0; } return 1; },
+      phrase:'La lampe s\'allume seulement si <b>toutes</b> les entrées valent 0.',
+      why:'C\'est un <b>OU suivi d\'un inverseur</b> : la bulle inverse la sortie du OU.'
+    },
+    XOR: {
+      id:'XOR', label:'OU-exclusif', long:'OU-exclusif (XOR)', iec:'=1', invert:false,
+      minVars:2, maxVars:2,
+      eq: function (v) { return 'S = ' + v[0] + ' ⊕ ' + v[1]; },
+      calc: function (v) { return (v[0] !== v[1]) ? 1 : 0; },
+      phrase:'La lampe s\'allume si les deux entrées sont <b>différentes</b>.',
+      why:'C\'est un OU <b>exclusif</b> : « l\'un ou l\'autre, mais pas les deux ». ' +
+          'Il vaut 1 quand le nombre de 1 est impair : c\'est le contrôle de <b>parité</b>, ' +
+          'donc aussi la détection d\'une <b>incohérence</b> entre deux capteurs.'
     }
   };
 
@@ -321,9 +356,9 @@
       resume:'Forme canonique : un produit par ligne à 1, et l\'écriture condensée Σ m(...).' },
     { n:4, view:'p4', titre:'Du français à la logique', tag:'Avancé', dispo:true,
       resume:'Traduire un cahier des charges en variables, en équation, puis vérifier un cas.' },
-    { n:5, view:'p5', titre:'NON-ET et NON-OU', tag:'Avancé', dispo:false,
+    { n:5, view:'p5', titre:'NON-ET et NON-OU', tag:'Avancé', dispo:true,
       resume:'Les fonctions universelles : tout construire avec une seule porte.' },
-    { n:6, view:'p6', titre:'OU-exclusif', tag:'Avancé', dispo:false,
+    { n:6, view:'p6', titre:'OU-exclusif', tag:'Avancé', dispo:true,
       resume:'XOR, parité, détection d\'incohérence.' },
     { n:7, view:'p7', titre:'Équivalences remarquables', tag:'Avancé', dispo:false,
       resume:'De Morgan, absorption, distributivité : simplifier en justifiant.' },
@@ -342,7 +377,8 @@
   function varsFor(fnId, third) {
     var f = FUNCS[fnId];
     if (f.maxVars === 1) return ['A'];
-    return third ? ['A','B','C'] : ['A','B'];
+    /* la 3e entrée n'existe que si la fonction l'accepte */
+    return (third && f.maxVars >= 3) ? ['A','B','C'] : ['A','B'];
   }
 
   /* Toutes les combinaisons d'entrées, dans l'ordre 000, 001, 010… */
@@ -375,11 +411,11 @@
     s += '<text class="gmark" x="' + (bx + bw / 2) + '" y="' + (H / 2) + '" text-anchor="middle" dominant-baseline="central">' + f.iec + '</text>';
     for (var i = 0; i < n; i++) {
       var y = 7 + (H - 14) * (i + 1) / (n + 1);
-      s += '<line class="gw" x1="6" y1="' + y + '" x2="' + bx + '" y2="' + y + '"/>';
+      s += '<line class="gw wire" x1="6" y1="' + y + '" x2="' + bx + '" y2="' + y + '"/>';
       s += '<text class="glabel" x="8" y="' + (y - 6) + '">' + varsArr[i] + '</text>';
     }
     var yc = H / 2, xOut = f.invert ? W - 20 : W - 4;
-    s += '<line class="gw" x1="' + (bx + bw) + '" y1="' + yc + '" x2="' + xOut + '" y2="' + yc + '"/>';
+    s += '<line class="gw wire" x1="' + (bx + bw) + '" y1="' + yc + '" x2="' + xOut + '" y2="' + yc + '"/>';
     if (f.invert) { s += '<circle class="gbub" cx="' + (W - 16) + '" cy="' + yc + '" r="4"/>'; }
     s += '<text class="glabel" x="' + (W - 10) + '" y="' + (yc - 9) + '">S</text>';
     s += '</svg>';
@@ -472,6 +508,45 @@
              'le courant doit traverser tous les contacts.';
     return 'Les contacts commandés par ' + varsArr.join(', ') + ' sont branchés en <b>parallèle</b> : ' +
            'il suffit qu\'un seul soit fermé.';
+  }
+
+  /* Logigramme : porte de base suivie d'un inverseur (NON-ET, NON-OU) */
+  function svgCompose(baseId, varsArr) {
+    var n = varsArr.length, base = FUNCS[baseId];
+    var H = Math.max(58, n * 22 + 32), W = 320;
+    var g1x = 34, g1w = 58, g2x = 186, g2w = 54;
+    var s = '<svg class="circuit gate-comp" id="circuit" viewBox="0 0 ' + W + ' ' + H + '" data-lit="0" ' +
+      'data-fn="' + (baseId === 'ET' ? 'NAND' : 'NOR') + '" data-vars="' + varsArr.join('') + '" role="img" ' +
+      'aria-label="Logigramme : ' + baseId + ' suivi d\'un inverseur">';
+    s += '<rect class="gbox" x="' + g1x + '" y="7" width="' + g1w + '" height="' + (H - 14) + '" rx="4"/>';
+    s += '<text class="gmark" x="' + (g1x + g1w / 2) + '" y="' + (H / 2) +
+      '" text-anchor="middle" dominant-baseline="central">' + base.iec + '</text>';
+    for (var i = 0; i < n; i++) {
+      var y = 7 + (H - 14) * (i + 1) / (n + 1);
+      s += '<line class="gw wire" x1="6" y1="' + y + '" x2="' + g1x + '" y2="' + y + '"/>';
+      s += '<text class="glabel" x="8" y="' + (y - 6) + '">' + varsArr[i] + '</text>';
+    }
+    s += '<line class="gw wire" x1="' + (g1x + g1w) + '" y1="' + (H / 2) + '" x2="' + g2x + '" y2="' + (H / 2) + '"/>';
+    s += '<rect class="gbox" x="' + g2x + '" y="' + (H / 2 - 20) + '" width="' + g2w + '" height="40" rx="4"/>';
+    s += '<text class="gmark" x="' + (g2x + g2w / 2) + '" y="' + (H / 2) +
+      '" text-anchor="middle" dominant-baseline="central">1</text>';
+    s += '<circle class="gbub" cx="' + (g2x + g2w + 4) + '" cy="' + (H / 2) + '" r="4"/>';
+    s += '<line class="gw wire" x1="' + (g2x + g2w + 8) + '" y1="' + (H / 2) + '" x2="' + (W - 14) + '" y2="' + (H / 2) + '"/>';
+    s += '<text class="glabel" x="' + (W - 10) + '" y="' + (H / 2 - 9) + '">S</text>';
+    s += '<text class="csub" x="' + (g2x + g2w / 2) + '" y="' + (H / 2 + 32) + '">inverseur</text>';
+    s += '</svg>';
+    return s;
+  }
+
+  /* Le montage : contacts pour les fonctions à contacts, logigramme sinon */
+  function svgSchema(fid, varsArr) {
+    if (fid === 'NAND') return svgCompose('ET', varsArr);
+    if (fid === 'NOR') return svgCompose('OU', varsArr);
+    if (fid === 'XOR') {
+      return svgGate('XOR', varsArr).replace('<svg class="gate"',
+        '<svg class="circuit gate-comp" id="circuit" data-lit="0" data-fn="XOR" data-vars="' + varsArr.join('') + '"');
+    }
+    return svgCircuit(fid, varsArr);
   }
 
   function lampSym(x, y) {
@@ -588,17 +663,16 @@
       '<section class="card" id="exoZone"></section>';
   }
 
-  function renderPalier2() {
+  /* ---------- Bac à sable générique (paliers 2, 5 et 6) ---------- */
+  function renderSandboxView(o) {
     return '<section class="card">' +
-      '<span class="qkind">Palier 2 · Bases</span>' +
-      '<h2>Les trois fonctions de base : NON, ET, OU</h2>' +
-      '<p class="lead">Choisis une fonction, puis actionne les interrupteurs : le montage, l\'équation et la ' +
-      'table de vérité se mettent à jour ensemble. Clique aussi une ligne de la table pour placer le montage ' +
-      'dans cet état.</p>' +
+      '<span class="qkind">' + o.badge + '</span>' +
+      '<h2>' + o.title + '</h2>' +
+      '<p class="lead">' + o.lead + '</p>' +
       '<div class="fn-picker" id="fnPicker"></div>' +
       '<div class="board">' +
         '<div class="panel">' +
-          '<h3>Le montage</h3>' +
+          '<h3 id="panelTitle">Le montage</h3>' +
           '<div class="switches" id="switchZone"></div>' +
           '<div id="circuitZone"></div>' +
           '<p class="state-line" id="stateLine"></p>' +
@@ -614,8 +688,92 @@
       '</div>' +
       '<div class="why" id="whyZone"></div>' +
       '<div class="conventions" id="convZone"></div>' +
-      '</section>' +
+      '</section>' + (o.extra || '') +
       '<section class="card" id="exoZone"></section>';
+  }
+
+  function renderPalier2() {
+    return renderSandboxView({
+      badge:'Palier 2 · Bases',
+      title:'Les trois fonctions de base : NON, ET, OU',
+      lead:'Choisis une fonction, puis actionne les interrupteurs : le montage, l\'équation et la table de ' +
+        'vérité se mettent à jour ensemble. Clique aussi une ligne de la table pour placer le montage dans cet état.'
+    });
+  }
+
+  /* ---------- Palier 5 : NON-ET et NON-OU, fonctions universelles ---------- */
+  function universellesCard() {
+    var nand = function (a, b) { return (a && b) ? 0 : 1; };
+    var L = [
+      { objet:'NON A', comment:'un NON-ET dont les deux entrées reçoivent A : S = ' + bar('A·A'),
+        f1:function (v) { return v[0] ? 0 : 1; }, f2:function (v) { return nand(v[0], v[0]); }, n:1 },
+      { objet:'A · B', comment:'un NON-ET suivi d\'un inverseur : la bulle annule l\'inversion',
+        f1:function (v) { return (v[0] && v[1]) ? 1 : 0; },
+        f2:function (v) { return nand(nand(v[0], v[1]), nand(v[0], v[1])); }, n:2 },
+      { objet:'A + B', comment:'S = ' + bar(bar('A') + '·' + bar('B')) + ' : un NON-ET sur A, un sur B, puis un NON-ET',
+        f1:function (v) { return (v[0] || v[1]) ? 1 : 0; },
+        f2:function (v) { return nand(nand(v[0], v[0]), nand(v[1], v[1])); }, n:2 }
+    ];
+    var rows = L.map(function (l) {
+      var ok = true, i, k, v;
+      for (i = 0; i < Math.pow(2, l.n); i++) {
+        v = [];
+        for (k = 0; k < l.n; k++) { v.push((i >> (l.n - 1 - k)) & 1); }
+        if (l.f1(v) !== l.f2(v)) ok = false;
+      }
+      return '<tr><td>' + l.objet + '</td><td>' + l.comment + '</td>' +
+        '<td class="verif">' + (ok ? '✅ tables identiques' : '❌ non vérifié') + '</td></tr>';
+    }).join('');
+    return '<section class="card">' +
+      '<span class="qkind">Palier 5 · Avancé</span>' +
+      '<h2>Pourquoi « universelles » ?</h2>' +
+      '<p class="lead">Avec <b>une seule</b> porte NON-ET, on fabrique les trois fonctions de base. ' +
+      'Les vérifications ci-dessous sont recalculées à l\'affichage, en comparant les tables de vérité ligne par ligne.</p>' +
+      '<table class="voc"><thead><tr><th>Ce que l\'on veut</th><th>Câblage avec des NON-ET</th><th>Vérification</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>' +
+      '<div class="conventions"><b>Le NON-OU est aussi universel :</b> ' +
+      'A·B = ' + bar(bar('A') + '+' + bar('B')) + ' — l\'inverse de « A ou B » — ' +
+      'puis la même cascade pour le OU. C\'est l\'objet des <b>lois de De Morgan</b> (palier 7).</div>' +
+      '</section>';
+  }
+
+  function renderPalier5() {
+    return renderSandboxView({
+      badge:'Palier 5 · Avancé',
+      title:'NON-ET et NON-OU : les fonctions universelles',
+      lead:'Le NON-ET (NAND) est un ET suivi d\'un inverseur, le NON-OU (NOR) un OU suivi d\'un inverseur : ' +
+        'c\'est le rôle du petit cercle placé sur la sortie. Choisis une fonction et observe la table.',
+      extra: universellesCard()
+    });
+  }
+
+  /* ---------- Palier 6 : OU-exclusif ---------- */
+  function xorCard() {
+    return '<section class="card">' +
+      '<span class="qkind">Palier 6 · Avancé</span>' +
+      '<h2>Application : détecter une incohérence</h2>' +
+      '<p class="lead">Deux capteurs A et B surveillent la même position : ils devraient toujours annoncer le ' +
+      'même état. Le OU-exclusif signale la contradiction.</p>' +
+      '<table class="voc"><thead><tr><th>Situation</th><th>Les capteurs disent…</th><th>S = A ⊕ B</th><th>Interprétation</th></tr></thead><tbody>' +
+      '<tr><td>les deux au repos</td><td>A = 0, B = 0</td><td><b>0</b></td><td>cohérent</td></tr>' +
+      '<tr><td>les deux actifs</td><td>A = 1, B = 1</td><td><b>0</b></td><td>cohérent</td></tr>' +
+      '<tr><td>désaccord</td><td>A = 0, B = 1</td><td><b>1</b></td><td>incohérence à signaler</td></tr>' +
+      '<tr><td>désaccord</td><td>A = 1, B = 0</td><td><b>1</b></td><td>incohérence à signaler</td></tr>' +
+      '</tbody></table>' +
+      '<div class="conventions"><b>À retenir —</b> le OU-exclusif vaut 1 quand le nombre de 1 est <b>impair</b> : ' +
+      'c\'est le principe du contrôle de <b>parité</b>. Attention : le OU ordinaire donne 1 pour A = B = 1, ' +
+      'le OU-exclusif donne 0 — d\'où le mot « exclusif ».</div>' +
+      '</section>';
+  }
+
+  function renderPalier6() {
+    return renderSandboxView({
+      badge:'Palier 6 · Avancé',
+      title:'OU-exclusif : « l\'un ou l\'autre, mais pas les deux »',
+      lead:'La sortie vaut 1 quand les deux entrées sont différentes, et seulement dans ce cas. ' +
+        'Le symbole porte le repère =1 : la sortie vaut 1 pour exactement une entrée à 1.',
+      extra: xorCard()
+    });
   }
 
   /* ---------- Exercice du palier 1 : lire la table « à l'envers » ---------- */
@@ -648,16 +806,35 @@
   }
 
   /* ---------- Exercice « quelles combinaisons allument la lampe ? » ---------- */
+  var POOL_BASES = [
+    { fn:'NON',  vars:['A'] },
+    { fn:'ET',   vars:['A','B'] },
+    { fn:'ET',   vars:['A','B','C'] },
+    { fn:'OU',   vars:['A','B'] },
+    { fn:'OU',   vars:['A','B','C'] }
+  ];
+  var POOL_UNIVERSELLES = [
+    { fn:'NAND', vars:['A','B'] },
+    { fn:'NAND', vars:['A','B','C'] },
+    { fn:'NOR',  vars:['A','B'] },
+    { fn:'NOR',  vars:['A','B','C'] },
+    { fn:'ET',   vars:['A','B','C'] }
+  ];
+  var POOL_XOR = [
+    { fn:'XOR', vars:['A','B'] },
+    { fn:'OU',  vars:['A','B'] },
+    { fn:'ET',  vars:['A','B'] },
+    { fn:'NON', vars:['A'] }
+  ];
+  function combiPool() {
+    if (state.view === 'p5') return POOL_UNIVERSELLES;
+    if (state.view === 'p6') return POOL_XOR;
+    return POOL_BASES;
+  }
+
   function newCombiExercise() {
-    var pool = [
-      { fn:'NON', vars:['A'] },
-      { fn:'ET',  vars:['A','B'] },
-      { fn:'ET',  vars:['A','B','C'] },
-      { fn:'OU',  vars:['A','B'] },
-      { fn:'OU',  vars:['A','B','C'] }
-    ];
-    var pickIdx = Math.floor(Math.random() * pool.length);
-    var p = pool[pickIdx];
+    var pool = combiPool();
+    var p = pool[Math.floor(Math.random() * pool.length)];
     return { kind:'combi', fn:p.fn, vars:p.vars, sel:{}, done:false, ok:false };
   }
 
@@ -1163,7 +1340,7 @@
       '<li>Vérifier au moins un cas particulier avec la table de vérité.</li>' +
       '</ol>' +
       '<h3>Le vocabulaire</h3>' +
-      '<table class="tt" id="ttVoc">' +
+      '<table class="voc" id="ttVoc">' +
       '<thead><tr><th>Dans l\'énoncé</th><th>En logique</th></tr></thead>' +
       '<tbody>' +
       '<tr><td>… <b>et</b> … (les deux)</td><td><b>·</b></td></tr>' +
@@ -1187,6 +1364,8 @@
     else if (state.view === 'p2') { html = renderPalier2(); }
     else if (state.view === 'p3') { html = renderPalier3(); }
     else if (state.view === 'p4') { html = renderPalier4(); }
+    else if (state.view === 'p5') { html = renderPalier5(); }
+    else if (state.view === 'p6') { html = renderPalier6(); }
     else if (state.view === 'defi') html = viewDefi();
     else if (state.view === 'memo') html = viewMemo();
     el.view.innerHTML = html;
@@ -1200,7 +1379,7 @@
       if (!state.ex || state.ex.kind !== 'ident') state.ex = newIdentExercise();
       renderExerciseInto(false);
     }
-    if (state.view === 'p2') {
+    if (state.view === 'p2' || state.view === 'p5' || state.view === 'p6') {
       buildSandbox(true); updateLive();
       if (!state.ex || state.ex.kind !== 'combi') state.ex = newCombiExercise();
       renderExerciseInto(false);
@@ -1231,6 +1410,8 @@
       : state.view === 'p2' ? 'Palier 2 · NON, ET, OU'
       : state.view === 'p3' ? 'Palier 3 · forme canonique'
       : state.view === 'p4' ? 'Palier 4 · du français à la logique'
+      : state.view === 'p5' ? 'Palier 5 · fonctions universelles'
+      : state.view === 'p6' ? 'Palier 6 · OU-exclusif'
       : state.view === 'defi' ? (state.defi ? 'Défi · question ' + Math.min(state.defi.index + 1, state.defi.total) + ' / ' + state.defi.total : 'Défi')
       : 'Mémo';
   }
@@ -1251,17 +1432,21 @@
     }).join('');
 
     if (withPicker) {
-      var f = FUNCS[state.fn];
-      var pick = ['NON','ET','OU'].map(function (id) {
-        return '<button data-fn="' + id + '"' + (state.fn === id ? ' class="active"' : '') + '>' + FUNCS[id].long + '</button>';
+      var cur = sandboxFn();
+      var pick = sandboxFnList().map(function (id) {
+        return '<button data-fn="' + id + '"' + (cur === id ? ' class="active"' : '') + '>' + FUNCS[id].long + '</button>';
       }).join('');
-      document.getElementById('fnPicker').innerHTML = pick +
-        '<button id="btnThird" class="extra' + (state.third ? ' active' : '') + '" data-third="1">' +
-        (state.third ? '✓ ' : '+ ') + '3<sup>e</sup> entrée C</button>';
+      var bouton3 = (FUNCS[cur].maxVars === 3)
+        ? '<button id="btnThird" class="extra' + (state.third ? ' active' : '') + '" data-third="1">' +
+          (state.third ? '✓ ' : '+ ') + '3<sup>e</sup> entrée C</button>'
+        : '';
+      document.getElementById('fnPicker').innerHTML = pick + bouton3;
     }
 
     var fid = sandboxFn();
-    document.getElementById('circuitZone').innerHTML = svgCircuit(fid, vars);
+    document.getElementById('circuitZone').innerHTML = svgSchema(fid, vars);
+    var pt = document.getElementById('panelTitle');
+    if (pt) pt.textContent = (['NAND','NOR','XOR'].indexOf(fid) >= 0) ? 'Le logigramme' : 'Le montage';
     document.getElementById('gateZone').innerHTML = svgGate(fid, vars);
     document.getElementById('eqZone').innerHTML = FUNCS[fid].eq(vars);
     document.getElementById('eqCap').textContent = FUNCS[fid].phrase;
@@ -1279,8 +1464,19 @@
     renderTruthTable('ttZone');
   }
 
-  /* Fonction utilisée par le bac à sable : identité au palier 1, fonction choisie au palier 2 */
-  function sandboxFn() { return state.view === 'p1' ? 'IDENT' : state.fn; }
+  /* Fonction utilisée par le bac à sable : identité au palier 1, fonction choisie ensuite */
+  function sandboxFn() {
+    if (state.view === 'p1') return 'IDENT';
+    var l = sandboxFnList();
+    return l.indexOf(state.fn) >= 0 ? state.fn : l[0];
+  }
+
+  /* Fonctions proposées selon le palier */
+  function sandboxFnList() {
+    if (state.view === 'p5') return ['NAND','NOR','NON','ET','OU'];
+    if (state.view === 'p6') return ['XOR','OU','NON'];
+    return ['NON','ET','OU'];
+  }
 
   /* Variables utilisées par le bac à sable (une seule au palier 1) */
   function sandboxVars() { return state.view === 'p1' ? ['A'] : activeVars(); }
@@ -1602,7 +1798,7 @@
     /* choix de fonction */
     if (b && b.hasAttribute('data-fn')) {
       state.fn = b.getAttribute('data-fn');
-      if (FUNCS[state.fn].maxVars === 1) state.third = false;
+      if (FUNCS[state.fn].maxVars < 3) state.third = false;
       buildSandbox(true); updateLive();
       return;
     }
