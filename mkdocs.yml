@@ -34,6 +34,7 @@ nav:
       - Implications: implications.md
   - Première:
     - Introduction: premiere.md
+    - Conversions: premiere_conversions.md
     - Maison positive: premiere_maison.md
     - Bras manipulateur: premiere_bras.md
     - Robobrole: premiere_robobrole.md
