@@ -315,7 +315,7 @@
       minVars:2, maxVars:3,
       eq: function (v) { return 'S = ' + v.join('·'); },
       calc: function (v) { for (var i = 0; i < v.length; i++) { if (!v[i]) return 0; } return 1; },
-      phrase:'La lampe s\'allume seulement si toutes les variables valent 1.',
+      phrase:'La lampe s\'allume seulement si <b>toutes</b> les variables valent 1.',
       why:'Les contacts sont branchés en <b>série</b> : le courant doit traverser <b>tous</b> les contacts. ' +
           'Il suffit qu\'un seul soit ouvert pour que la lampe s\'éteigne.'
     },
@@ -2004,7 +2004,8 @@
     if (pt) pt.textContent = (['NAND','NOR','XOR'].indexOf(fid) >= 0) ? 'Le logigramme' : 'Le montage';
     document.getElementById('gateZone').innerHTML = svgGate(fid, vars);
     document.getElementById('eqZone').innerHTML = FUNCS[fid].eq(vars);
-    document.getElementById('eqCap').textContent = FUNCS[fid].phrase;
+    /* la phrase contient des mises en valeur (<b>) : il faut l'injecter en HTML, pas en texte */
+    document.getElementById('eqCap').innerHTML = FUNCS[fid].phrase;
     if (document.getElementById('whyZone'))
       document.getElementById('whyZone').innerHTML = '<b>Pourquoi ça marche —</b> ' + FUNCS[fid].why;
     if (document.getElementById('convZone'))
