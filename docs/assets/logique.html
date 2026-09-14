@@ -174,6 +174,7 @@
   table.tt tbody tr.one td.out{color:var(--ok);font-weight:800}
   table.tt tbody tr.sel{outline:2px solid var(--accent);outline-offset:-2px}
   table.tt td.out{font-weight:700}
+  table.tt td.mnum{color:var(--muted);font-weight:600;font-size:.85em}
   /* tableaux de texte (vocabulaire, équivalences) */
   table.voc{width:100%;border-collapse:collapse;font-size:.88rem}
   table.voc th,table.voc td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
@@ -984,8 +985,10 @@
       : '';
     var corps = (q.shown === 'equation')
       ? '<div class="prompt"><h2>Quelle est l\'écriture condensée de cette fonction ?</h2>' +
-        '<p class="lead">La fonction est donnée par <b>' + FUNCS[q.fn].eq(q.vars) + '</b>. ' +
-        'Les lignes où S = 1 sont ses <b>mintermes</b> : on les note Σ m(...).</p></div>'
+        '<p class="lead">La fonction est donnée par <b>' + FUNCS[q.fn].eq(q.vars) + '</b>.</p>' +
+        '<p class="lead">Les combinaisons où S = 1 sont ses <b>mintermes</b>, notés Σ m(...). ' +
+        'Attention : le numéro d\'un minterme est la valeur binaire de (' + q.vars.join(', ') +
+        ') lue comme un nombre — la combinaison 000 porte le numéro 0, pas le numéro 1.</p></div>'
       : '<div class="prompt"><h2>La table de vérité ci-dessous correspond à quelle équation ?</h2></div>' +
         '<table class="tt" id="ttDefi"><thead><tr>' + th2 + '</tr></thead><tbody>' + tb2 + '</tbody></table>';
     return '<section class="card">' + head + corps +
@@ -1133,6 +1136,22 @@
 
   function f3courante() { return FONC3[state.f3] || FONC3[0]; }
 
+  /* Phrase de correction : quelles combinaisons valent 1, et sous quels numéros de minterme */
+  function sigmaLecture(fnc) {
+    var L = lignes3(), ones = [], zeros = [], i;
+    for (i = 0; i < L.length; i++) { if (L[i].o) { ones.push(L[i]); } else { zeros.push(L[i]); } }
+    var txt = 'la sortie vaut 1 pour les combinaisons <b>' +
+      ones.map(function (r) { return r.v.join(''); }).join(', ') +
+      '</b>, dont les numéros de minterme sont <b>' +
+      ones.map(function (r) { return r.i; }).join(', ') + '</b>';
+    if (zeros.length) {
+      txt += ', et vaut 0 pour <b>' + zeros.map(function (r) { return r.v.join(''); }).join(', ') +
+        '</b> (numéro' + (zeros.length > 1 ? 's ' : ' ') +
+        zeros.map(function (r) { return r.i; }).join(', ') + ')';
+    }
+    return txt;
+  }
+
   function lignes3() {
     var out = [], i, k, v;
     for (i = 0; i < 8; i++) {
@@ -1169,15 +1188,17 @@
     return 'S = Σ m(' + liste.join(', ') + ')';
   }
 
+  /* De l'équation à la forme canonique */
   function renderPalier3() {
     var f = f3courante(), m = mintermes(f);
     var picker = FONC3.map(function (x) {
       return '<button data-f3="' + x.id + '"' + (x.id === f.id ? ' class="active"' : '') + '>' + x.label + '</button>';
     }).join('');
     var lignes = lignes3();
-    var table = '<table class="tt" id="tt3"><thead><tr><th>A</th><th>B</th><th>C</th><th>S</th></tr></thead><tbody>' +
+    var table = '<table class="tt" id="tt3"><thead><tr><th>m</th><th>A</th><th>B</th><th>C</th><th>S</th></tr></thead><tbody>' +
       lignes.map(function (r) {
         return '<tr class="' + (r.o ? 'one' : '') + '">' +
+          '<td class="mnum">' + r.i + '</td>' +
           r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
           '<td class="out">' + r.o + '</td></tr>';
       }).join('') + '</tbody></table>';
@@ -1193,16 +1214,21 @@
       '<h2>De l\'équation à la forme canonique</h2>' +
       '<p class="lead">Toute fonction logique s\'écrit comme une <b>somme de produits</b> des entrées : ' +
       'un produit — un <b>minterme</b> — par ligne où S = 1. C\'est la <b>forme canonique</b>.</p>' +
+      '<p class="lead"><b>Numéroter les mintermes —</b> le numéro d\'un minterme est la valeur binaire de ' +
+      '(A, B, C) lue comme un nombre : la combinaison A = 0, B = 0, C = 0 porte le numéro <b>0</b>, ' +
+      'et A = 1, B = 1, C = 1 porte le numéro <b>7</b>. C\'est ce numéro — et non le rang de la ligne dans ' +
+      'le tableau — qui apparaît dans l\'écriture Σ m(...).</p>' +
       '<div class="fn-picker" id="f3Picker">' + picker + '</div>' +
       '<p class="lead">' + f.contexte + '</p>' +
       '<div class="board">' +
         '<div class="panel"><h3>La table de vérité</h3>' + table +
-        '<p class="eq-cap">Les lignes surlignées sont les mintermes (S = 1).</p></div>' +
+        '<p class="eq-cap">La colonne <b>m</b> donne le numéro du minterme (valeur binaire de ABC). ' +
+        'Les lignes surlignées sont les mintermes, c\'est-à-dire celles où S = 1.</p></div>' +
         '<div class="panel"><h3>L\'écriture canonique</h3>' +
         '<p class="eq-cap">Équation de départ</p>' +
         '<p class="eq">' + f.eq() + '</p>' +
-        '<p class="eq-cap">Lignes à 1</p><p class="deriv">' + lignes1 + '</p>' +
-        '<p class="eq-cap">Un produit par ligne</p><p class="deriv">' + prod + '</p>' +
+        '<p class="eq-cap">Combinaisons à 1 (mintermes)</p><p class="deriv">' + lignes1 + '</p>' +
+        '<p class="eq-cap">Un produit par minterme</p><p class="deriv">' + prod + '</p>' +
         '<p class="eq-cap">Somme de ces produits : forme canonique</p>' +
         '<p class="eq">' + eqCanonique(f) + '</p>' +
         '<p class="eq-cap">Écriture condensée</p>' +
@@ -1250,9 +1276,10 @@
 
   function renderSigmaExercise(ex) {
     var lignes = lignes3();
-    var table = '<table class="tt" id="ttSigma"><thead><tr><th>A</th><th>B</th><th>C</th><th>S</th></tr></thead><tbody>' +
+    var table = '<table class="tt" id="ttSigma"><thead><tr><th>m</th><th>A</th><th>B</th><th>C</th><th>S</th></tr></thead><tbody>' +
       lignes.map(function (r) {
-        return '<tr>' + r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
+        return '<tr>' + '<td class="mnum">' + r.i + '</td>' +
+          r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
           '<td class="out">?</td></tr>';
       }).join('') + '</tbody></table>';
     var opts = ex.options.map(function (o, i) {
@@ -1265,13 +1292,17 @@
     var fb = ex.done
       ? '<div class="feedback show ' + (ex.ok ? 'good' : 'bad') + '" data-verdict="' + (ex.ok ? 'ok' : 'ko') + '">' +
         '<span class="title">' + (ex.ok ? '✅ Exact !' : '❌ Non : ' + bonne) + '</span>' +
-        'Avec <b>' + ex.f.eq() + '</b>, la sortie vaut 1 pour les lignes <b>' + listeMintermes(ex.f).join(', ') +
-        '</b>. La forme canonique est <b>' + eqCanonique(ex.f) + '</b>, soit ' + bonne + '.</div>'
+        'Avec <b>' + ex.f.eq() + '</b>, ' + sigmaLecture(ex.f) + '. ' +
+        'La forme canonique est <b>' + eqCanonique(ex.f) + '</b>, soit <b>' + bonne + '</b>. ' +
+        'Rappel : le numéro d\'un minterme est la valeur binaire de (A, B, C) lue comme un nombre — ' +
+        'la combinaison A = 0, B = 0, C = 0 porte le numéro <b>0</b>.</div>'
       : '';
     return '<span class="qkind">Mini-exercice</span>' +
       '<h2>Quelle est l\'écriture condensée de cette fonction ?</h2>' +
-      '<p class="lead">La fonction est donnée par <b>' + ex.f.eq() + '</b>. Complète la table (les lignes où S = 1 ' +
-      'sont les mintermes), puis choisis la bonne écriture condensée.</p>' +
+      '<p class="lead">La fonction est donnée par <b>' + ex.f.eq() + '</b>. Complète la colonne S de la table, ' +
+      'puis choisis la bonne écriture condensée.</p>' +
+      '<p class="lead">La colonne <b>m</b> donne déjà le numéro de chaque minterme : c\'est la valeur binaire de ' +
+      '(A, B, C) lue comme un nombre (la combinaison 000 porte le numéro 0, la combinaison 111 le numéro 7).</p>' +
       table +
       '<div class="choices" id="choicesExo">' + opts + '</div>' + fb +
       '<div class="actions">' +
@@ -1795,7 +1826,7 @@
         '<tr><th>Variables</th><td>' + M.vars.map(function (v, i) { return '<b>' + v + '</b> : ' + M.conv[i]; }).join('<br>') + '</td></tr>' +
         '<tr><th>Équation</th><td>' + M.eq + '</td></tr>' +
         '<tr><th>Montage</th><td>' + M.montage + '</td></tr>' +
-        '<tr><th>Lignes à 1</th><td>' + (mins.length
+        '<tr><th>Combinaisons à 1<br><span class="mini">m = numéro du minterme</span></th><td>' + (mins.length
           ? mins.map(function (r) { return r.v.join('') + ' <span class="mini">m' + r.i + '</span>'; }).join(' &nbsp;·&nbsp; ')
           : 'aucune') + '</td></tr>' +
         '<tr><th>Forme canonique</th><td>' + canoniqueOf(M.calc, M.vars) + '</td></tr>' +
@@ -2236,8 +2267,10 @@
         var m = onesOf(p.fn, p.vars).map(function (c) { return parseInt(c, 2); });
         return { kind:'qcm', fn:p.fn, vars:p.vars, shown:'equation', theme:'Palier 3 · forme canonique',
           choices: sigmaChoices(m, p.vars.length),
-          expl:'La fonction vaut 1 pour les lignes <b>' + m.join(', ') + '</b> : ce sont ses mintermes, ' +
-            'que l\'on note Σ m(...).',
+          expl:'La fonction vaut 1 pour les combinaisons <b>' + onesOf(p.fn, p.vars).join(', ') +
+            '</b>, donc pour les mintermes <b>' + m.join(', ') + '</b> : on écrit Σ m(...). ' +
+            'Le numéro d\'un minterme est la valeur binaire de (' + p.vars.join(', ') +
+            ') lue comme un nombre : la combinaison 000 porte le numéro 0.',
           errorLabel:'écriture condensée de ' + FUNCS[p.fn].eq(p.vars),
           done:false, ok:false, picked:-1 };
       }
