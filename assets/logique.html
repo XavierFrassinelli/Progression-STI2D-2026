@@ -155,14 +155,19 @@
   .eq{font-size:1.35rem;font-weight:800;text-align:center;letter-spacing:.5px;margin:10px 0 4px;font-variant-numeric:tabular-nums}
   .eq-cap{text-align:center;font-size:.78rem;color:var(--muted);margin-bottom:8px}
   .op{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:2px 9px;font-size:1.05em;font-weight:800;margin:0 4px}
-  /* La barre de négation doit être visible PARTOUT : équations, QCM, corrections, mémo */
-  .ovl{text-decoration:overline;padding:0 2px}
+  /* La barre de négation doit être visible PARTOUT : équations, QCM, corrections, mémo.
+     Elle est dessinée par un pseudo-élément (et non par text-decoration) pour que deux négations
+     imbriquées — double négation du palier 7 — montrent bien DEUX barres distinctes :
+     chaque niveau de .ovl ajoute 3px de padding, ce qui décale sa propre barre. */
+  .ovl{position:relative;display:inline-block;padding:3px 2px 0;line-height:1.15}
+  .ovl::before{content:"";position:absolute;left:1px;right:1px;top:0;height:1.5px;background:currentColor;border-radius:1px}
   .eq-inline{font-weight:800;font-variant-numeric:tabular-nums}
   .conv-list{list-style:none;padding:0;margin:12px 0 0}
   .conv-list li{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
   .conv-list li:first-child{border-top:0}
   .sym{display:inline-block;min-width:46px;padding:6px 10px;text-align:center;font-size:1.5rem;font-weight:800;line-height:1.15;background:var(--accent-soft);color:var(--accent);border-radius:10px}
   .sym.ovl{text-decoration:overline}
+  .sym.ovl::before{display:none}
 
   /* ---------- Table de vérité ---------- */
   table.tt{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
