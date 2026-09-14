@@ -886,9 +886,11 @@
 
   /* ---------- Bac à sable : squelette puis mise à jour ciblée ---------- */
   function buildSandbox(withPicker) {
-    var vars = activeVars();
+    var vars = sandboxVars();
     var swZone = document.getElementById('switchZone');
-    swZone.innerHTML = ['A','B','C'].map(function (v) {
+    /* Au palier 1, l'étude porte sur une seule variable : on n'affiche que A. */
+    var shown = (state.view === 'p1') ? ['A'] : ['A','B','C'];
+    swZone.innerHTML = shown.map(function (v) {
       var on = vars.indexOf(v) >= 0;
       return '<button class="switch" role="switch" data-sw="' + v + '" aria-checked="' + (state.sw[v] ? 'true' : 'false') + '"' +
         (on ? '' : ' disabled') + '>' +
@@ -921,7 +923,7 @@
         'Le cercle à la sortie du symbole signifie « inverse » (norme NF EN 60617).';
     var cap = document.getElementById('ttCap');
     if (cap) cap.textContent = (state.view === 'p1')
-      ? 'S = A : la lampe recopie l\'état de l\'interrupteur'
+      ? 'Table de vérité : 1 variable, 2 lignes'
       : 'Table de vérité de ' + FUNCS[fid].long;
     renderTruthTable('ttZone');
   }
@@ -929,8 +931,11 @@
   /* Fonction utilisée par le bac à sable : identité au palier 1, fonction choisie au palier 2 */
   function sandboxFn() { return state.view === 'p1' ? 'IDENT' : state.fn; }
 
+  /* Variables utilisées par le bac à sable (une seule au palier 1) */
+  function sandboxVars() { return state.view === 'p1' ? ['A'] : activeVars(); }
+
   function renderTruthTable(zoneId) {
-    var vars = (state.view === 'p1') ? ['A'] : activeVars();
+    var vars = sandboxVars();
     var fnId = sandboxFn();
     var rows = allRows(fnId, vars);
     var cur = vars.map(function (v) { return state.sw[v]; }).join('');
@@ -948,7 +953,7 @@
 
   /* Mise à jour ciblée : pas de perte de focus, pas de redémarrage d'animation */
   function updateLive() {
-    var vars = (state.view === 'p1') ? ['A'] : activeVars();
+    var vars = sandboxVars();
     var fnId = sandboxFn();
     var f = FUNCS[fnId];
     var combo = vars.map(function (v) { return state.sw[v]; }).join('');
@@ -1214,7 +1219,7 @@
     var tr = ev.target.closest ? ev.target.closest('tr[data-combo]') : null;
     if (tr) {
       var combo = tr.getAttribute('data-combo');
-      (state.view === 'p1' ? ['A'] : activeVars()).forEach(function (v, i) {
+      sandboxVars().forEach(function (v, i) {
         state.sw[v] = Number(combo.charAt(i));
       });
       updateLive();
