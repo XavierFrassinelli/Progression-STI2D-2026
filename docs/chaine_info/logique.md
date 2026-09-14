@@ -23,9 +23,11 @@ L'onglet **Défi** enchaîne 10 questions notées sur 20, l'onglet **Mémo** ré
 tables et les identités, et le **bilan du palier 8** tire ses questions de tous les paliers en terminant
 par un récapitulatif groupé par thème.
 
+<!-- ?v=N : à incrémenter à chaque déploiement de logique.html, sinon les navigateurs
+     resservent l'ancienne application depuis le cache (balises HTML visibles en clair). -->
 <iframe
   id="logique-frame"
-  src="../../assets/logique.html"
+  src="../../assets/logique.html?v=2"
   style="width:100%;height:1000px;border:1px solid #e4e4e4;border-radius:8px;display:block;"
   loading="lazy"
   allow="clipboard-write"
