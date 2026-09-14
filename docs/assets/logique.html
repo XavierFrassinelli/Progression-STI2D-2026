@@ -175,6 +175,13 @@
   table.tt tbody tr.sel{outline:2px solid var(--accent);outline-offset:-2px}
   table.tt td.out{font-weight:700}
   table.tt td.mnum{color:var(--muted);font-weight:600;font-size:.85em}
+  /* colonne S cliquable de l'exercice */
+  table.tt td[data-srow]{cursor:pointer;user-select:none}
+  table.tt td[data-srow]:hover{outline:2px solid var(--accent);outline-offset:-2px}
+  table.tt td.cell.v1{color:var(--ok);font-weight:800}
+  table.tt td.cell.v0{color:var(--muted);font-weight:700}
+  table.tt td.good{color:var(--ok);font-weight:800}
+  table.tt td.ko-cell{color:var(--ko);font-weight:800}
   /* tableaux de texte (vocabulaire, équivalences) */
   table.voc{width:100%;border-collapse:collapse;font-size:.88rem}
   table.voc th,table.voc td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}
@@ -1152,15 +1159,18 @@
     return txt;
   }
 
-  function lignes3() {
+  /* Les 8 lignes de la table, pour une fonction donnée */
+  function lignesFonc(fnc) {
     var out = [], i, k, v;
     for (i = 0; i < 8; i++) {
       v = [];
       for (k = 0; k < 3; k++) { v.push((i >> (2 - k)) & 1); }
-      out.push({ i:i, v:v, o:f3courante().calc(v) });
+      out.push({ i:i, v:v, o:fnc.calc(v) });
     }
     return out;
   }
+
+  function lignes3() { return lignesFonc(f3courante()); }
 
   /* Mintermes : les lignes où S = 1 */
   function mintermes(fnc) {
@@ -1269,18 +1279,30 @@
     }
     return {
       kind:'sigma', f:f,
+      tab:[null, null, null, null, null, null, null, null],
       options: shuffleChoices([{ html:eqSigma(m), ok:true }].concat(wrong)),
       picked:-1, done:false, ok:false
     };
   }
 
   function renderSigmaExercise(ex) {
-    var lignes = lignes3();
+    /* les valeurs attendues viennent de la fonction de l'exercice, pas du panneau voisin */
+    var lignes = lignesFonc(ex.f);
     var table = '<table class="tt" id="ttSigma"><thead><tr><th>m</th><th>A</th><th>B</th><th>C</th><th>S</th></tr></thead><tbody>' +
       lignes.map(function (r) {
-        return '<tr>' + '<td class="mnum">' + r.i + '</td>' +
+        var v = ex.tab[r.i], cls = 'out cell', txt;
+        if (ex.done) {
+          var ok1 = (v === r.o);
+          cls += ok1 ? ' good' : ' ko-cell';
+          txt = r.o + (ok1 ? '' : ' <span class="mini">' +
+            (v === null || v === undefined ? '(non rempli)' : '(saisi ' + v + ')') + '</span>');
+        } else {
+          txt = (v === null || v === undefined) ? '?' : String(v);
+          if (v === 1 || v === 0) cls += ' v' + v;
+        }
+        return '<tr><td class="mnum">' + r.i + '</td>' +
           r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
-          '<td class="out">?</td></tr>';
+          '<td class="' + cls + '"' + (ex.done ? '' : ' data-srow="' + r.i + '"') + '>' + txt + '</td></tr>';
       }).join('') + '</tbody></table>';
     var opts = ex.options.map(function (o, i) {
       var cls = '';
@@ -1295,12 +1317,17 @@
         'Avec <b>' + ex.f.eq() + '</b>, ' + sigmaLecture(ex.f) + '. ' +
         'La forme canonique est <b>' + eqCanonique(ex.f) + '</b>, soit <b>' + bonne + '</b>. ' +
         'Rappel : le numéro d\'un minterme est la valeur binaire de (A, B, C) lue comme un nombre — ' +
-        'la combinaison A = 0, B = 0, C = 0 porte le numéro <b>0</b>.</div>'
+        'la combinaison A = 0, B = 0, C = 0 porte le numéro <b>0</b>.' +
+        '<br><b>Ta colonne S :</b> ' + (ex.tableJuste
+          ? 'juste, 8 lignes sur 8 ✅'
+          : '<b>' + ex.tableScore + ' ligne(s) juste(s) sur 8</b> — les bonnes valeurs sont affichées en vert, ' +
+            'tes erreurs en rouge.') +
+        '</div>'
       : '';
     return '<span class="qkind">Mini-exercice</span>' +
       '<h2>Quelle est l\'écriture condensée de cette fonction ?</h2>' +
-      '<p class="lead">La fonction est donnée par <b>' + ex.f.eq() + '</b>. Complète la colonne S de la table, ' +
-      'puis choisis la bonne écriture condensée.</p>' +
+      '<p class="lead">La fonction est donnée par <b>' + ex.f.eq() + '</b>. Remplis la colonne <b>S</b> de la table ' +
+      '(clique sur une case : <b>?</b> → <b>1</b> → <b>0</b> → <b>?</b>), puis choisis la bonne écriture condensée.</p>' +
       '<p class="lead">La colonne <b>m</b> donne déjà le numéro de chaque minterme : c\'est la valeur binaire de ' +
       '(A, B, C) lue comme un nombre (la combinaison 000 porte le numéro 0, la combinaison 111 le numéro 7).</p>' +
       table +
@@ -2103,10 +2130,29 @@
       return;
     }
     if (ex.kind === 'sigma') {
+      /* la colonne S se remplit au clic : ? → 1 → 0 → ? */
+      Array.prototype.forEach.call(document.querySelectorAll('#ttSigma td[data-srow]'), function (td) {
+        td.addEventListener('click', function () {
+          if (ex.done) return;
+          ex.tab = ex.tab || [];
+          var r = Number(td.getAttribute('data-srow'));
+          var cur = ex.tab[r];
+          var nv = (cur === null || cur === undefined) ? 1 : (cur === 1 ? 0 : null);
+          ex.tab[r] = nv;
+          td.textContent = (nv === null) ? '?' : String(nv);
+          td.classList.toggle('v1', nv === 1);
+          td.classList.toggle('v0', nv === 0);
+        });
+      });
       Array.prototype.forEach.call(document.querySelectorAll('#choicesExo button'), function (b) {
         b.addEventListener('click', function () {
           var i = Number(b.getAttribute('data-opt'));
           ex.picked = i; ex.done = true; ex.ok = ex.options[i].ok;
+          /* on corrige aussi la table remplie par l'élève */
+          var L = lignesFonc(ex.f), juste = 0, k;
+          for (k = 0; k < L.length; k++) { if ((ex.tab || [])[L[k].i] === L[k].o) juste++; }
+          ex.tableScore = juste;
+          ex.tableJuste = (juste === L.length);
           if (ex.ok) state.score++;
           renderExerciseInto(false); updateStats();
         });
