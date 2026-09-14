@@ -250,7 +250,8 @@ export default function EnergyChainApp() {
 
   const handleValidate = () => {
     let newScore = 0;
-    Object.entries(placements).forEach(([blockId, item]) => {
+    /* placements est un Record<BlockId, …> : on fixe le type, sinon TS retombe sur unknown */
+    (Object.entries(placements) as [BlockId, ComponentItem | null][]).forEach(([blockId, item]) => {
       if (item && item.targetBlock === blockId) {
         newScore++;
       }
@@ -428,7 +429,7 @@ export default function EnergyChainApp() {
   };
 
   const availableItems = currentItems.filter(item => {
-    return !Object.values(placements).some(placed => placed?.id === item.id);
+    return !(Object.values(placements) as (ComponentItem | null)[]).some(placed => placed?.id === item.id);
   });
 
   const isComplete = availableItems.length === 0;
