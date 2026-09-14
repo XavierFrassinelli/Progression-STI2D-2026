@@ -259,6 +259,8 @@
       <button class="mode-btn" data-view="p4" role="tab">Palier 4 · Énoncés</button>
       <button class="mode-btn" data-view="p5" role="tab">Palier 5 · NON-ET/NON-OU</button>
       <button class="mode-btn" data-view="p6" role="tab">Palier 6 · OU-exclusif</button>
+      <button class="mode-btn" data-view="p7" role="tab">Palier 7 · Équivalences</button>
+      <button class="mode-btn" data-view="p8" role="tab">Palier 8 · Missions</button>
       <button class="mode-btn" data-view="defi" role="tab">Défi</button>
       <button class="mode-btn" data-view="memo" role="tab">Mémo</button>
     </div>
@@ -360,9 +362,9 @@
       resume:'Les fonctions universelles : tout construire avec une seule porte.' },
     { n:6, view:'p6', titre:'OU-exclusif', tag:'Avancé', dispo:true,
       resume:'XOR, parité, détection d\'incohérence.' },
-    { n:7, view:'p7', titre:'Équivalences remarquables', tag:'Avancé', dispo:false,
+    { n:7, view:'p7', titre:'Équivalences remarquables', tag:'Avancé', dispo:true,
       resume:'De Morgan, absorption, distributivité : simplifier en justifiant.' },
-    { n:8, view:'p8', titre:'Missions', tag:'Avancé', dispo:false,
+    { n:8, view:'p8', titre:'Missions', tag:'Avancé', dispo:true,
       resume:'Portail, alarme, tri de pièces : le cahier des charges complet.' }
   ];
 
@@ -506,8 +508,17 @@
     if (fnId === 'ET')
       return 'Les contacts commandés par ' + varsArr.join(', ') + ' sont branchés en <b>série</b> : ' +
              'le courant doit traverser tous les contacts.';
-    return 'Les contacts commandés par ' + varsArr.join(', ') + ' sont branchés en <b>parallèle</b> : ' +
-           'il suffit qu\'un seul soit fermé.';
+    if (fnId === 'OU')
+      return 'Les contacts commandés par ' + varsArr.join(', ') + ' sont branchés en <b>parallèle</b> : ' +
+             'il suffit qu\'un seul soit fermé.';
+    if (fnId === 'NAND')
+      return 'Les <b>contacts en série</b> de ' + varsArr.join(', ') + ' sont suivis d\'un <b>inverseur</b> : ' +
+             'la lampe s\'éteint seulement si tous les contacts sont fermés.';
+    if (fnId === 'NOR')
+      return 'Les <b>contacts en parallèle</b> de ' + varsArr.join(', ') + ' sont suivis d\'un <b>inverseur</b> : ' +
+             'la lampe ne s\'allume que si tous les contacts sont ouverts.';
+    return 'Les contacts ' + varsArr.join(', ') + ' attaquent un <b>OU-exclusif</b> : ' +
+           'la lampe s\'allume lorsque les deux contacts sont dans des états différents.';
   }
 
   /* Logigramme : porte de base suivie d'un inverseur (NON-ET, NON-OU) */
@@ -567,6 +578,8 @@
     sw:{A:0,B:0,C:0},
     score:0,
     f3:0,
+    /* palier 7 : règle étudiée */
+    r7:0,
     /* exercice de la vue courante */
     ex:null,
     /* défi */
@@ -612,8 +625,10 @@
       '<p class="lead">À gauche le montage : des interrupteurs, des contacts, une lampe. À droite l\'écriture ' +
       'formelle qui décrit exactement ce montage : symbole normalisé, équation, table de vérité. ' +
       'Chaque clic met les deux à jour ensemble.</p>' +
-      '<p class="lead">Les paliers <b>Bases</b> sont accessibles ici (' + total + ' paliers). ' +
-      'Les paliers <b>Avancé</b> arriveront à la suite de cette première version.</p>' +
+      '<p class="lead">Les paliers <b>Bases</b> (' + total + ') installent les réflexes : montage, symbole, ' +
+      'équation, table. Les paliers <b>Avancé</b> vont plus loin : forme canonique et notation Σ, traduction ' +
+      'd\'un cahier des charges, fonctions universelles, OU-exclusif, équivalences remarquables, puis missions ' +
+      'complètes et bilan noté.</p>' +
       '<h3>Le parcours</h3>' +
       '<div class="paliers">' + cards + '</div>' +
       '</section>' +
@@ -844,6 +859,8 @@
     if (ex.kind === 'ident') return renderIdentExercise(ex);
     if (ex.kind === 'sigma') return renderSigmaExercise(ex);
     if (ex.kind === 'scenario') return renderScenarioExercise(ex);
+    if (ex.kind === 'equiv') return renderEquivExercise(ex);
+    if (ex.kind === 'mission') return renderMissionExercise(ex);
     var f = FUNCS[ex.fn];
     var rows = allRows(ex.fn, ex.vars);
     var head = ex.vars.map(function (v) { return '<th>' + v + '</th>'; }).join('') + '<th>S</th>';
@@ -919,6 +936,29 @@
         '</section>';
     }
 
+    /* QCM d'équivalence : expression donnée, écriture équivalente à reconnaître */
+    if (q.kind === 'equiv') {
+      var chE = q.choices.map(function (c, i) {
+        var clsE = '';
+        if (q.done) { if (c.ok) clsE = 'ok'; else if (i === q.picked) clsE = 'ko'; }
+        return '<button data-i="' + i + '"' + (clsE ? ' class="' + clsE + '"' : '') +
+          (q.done ? ' disabled' : '') + '>' + c.html + '</button>';
+      }).join('');
+      var bonneE = '';
+      q.choices.forEach(function (c) { if (c.ok) bonneE = c.html; });
+      var fbE = q.done
+        ? '<div class="feedback show ' + (q.ok ? 'good' : 'bad') + '" data-verdict="' + (q.ok ? 'ok' : 'ko') + '">' +
+          '<span class="title">' + (q.ok ? '✅ Exact !' : '❌ Réponse : ' + bonneE) + '</span>' + q.expl + '</div>'
+        : '';
+      return '<section class="card">' + head +
+        '<div class="prompt"><h2>' + q.titre + '</h2>' +
+        (q.type === 'choix' ? '<p class="eq">' + exHTML(q.avant) + '</p>' : '') +
+        '<p class="lead">' + q.enonce + '</p></div>' +
+        '<div class="choices" id="choicesDefi">' + chE + '</div>' + fbE +
+        '<div class="actions">' + nextBtn + '</div>' +
+        '</section>';
+    }
+
     /* QCM : table donnée, équation à reconnaître */
     var seq = allRows(q.fn, q.vars);
     var th2 = q.vars.map(function (v) { return '<th>' + v + '</th>'; }).join('') + '<th>S</th>';
@@ -935,14 +975,20 @@
       return '<button data-i="' + i + '"' + (cls ? ' class="' + cls + '"' : '') +
         (q.done ? ' disabled' : '') + '>' + c.html + '</button>';
     }).join('');
+    var bonne2 = '';
+    q.choices.forEach(function (c) { if (c.ok) bonne2 = c.html; });
     var fb2 = q.done
       ? '<div class="feedback show ' + (q.ok ? 'good' : 'bad') + '" data-verdict="' + (q.ok ? 'ok' : 'ko') + '">' +
-        '<span class="title">' + (q.ok ? '✅ Correct !' : '❌ Bonne réponse : ' + FUNCS[q.fn].eq(q.vars)) + '</span>' +
-        FUNCS[q.fn].why + '</div>'
+        '<span class="title">' + (q.ok ? '✅ Correct !' : '❌ Bonne réponse : ' + bonne2) + '</span>' +
+        (q.expl || FUNCS[q.fn].why) + '</div>'
       : '';
-    return '<section class="card">' + head +
-      '<div class="prompt"><h2>La table de vérité ci-dessous correspond à quelle équation ?</h2></div>' +
-      '<table class="tt" id="ttDefi"><thead><tr>' + th2 + '</tr></thead><tbody>' + tb2 + '</tbody></table>' +
+    var corps = (q.shown === 'equation')
+      ? '<div class="prompt"><h2>Quelle est l\'écriture condensée de cette fonction ?</h2>' +
+        '<p class="lead">La fonction est donnée par <b>' + FUNCS[q.fn].eq(q.vars) + '</b>. ' +
+        'Les lignes où S = 1 sont ses <b>mintermes</b> : on les note Σ m(...).</p></div>'
+      : '<div class="prompt"><h2>La table de vérité ci-dessous correspond à quelle équation ?</h2></div>' +
+        '<table class="tt" id="ttDefi"><thead><tr>' + th2 + '</tr></thead><tbody>' + tb2 + '</tbody></table>';
+    return '<section class="card">' + head + corps +
       '<div class="choices" id="choicesDefi">' + choices + '</div>' +
       fb2 +
       '<div class="actions">' + nextBtn + '</div>' +
@@ -957,20 +1003,28 @@
       note >= 14 ? 'Bien : quelques confusions à lever.' :
       note >= 10 ? 'Moyen : revois le Mémo, surtout « série = ET, parallèle = OU ».' :
       'À consolider : reprends les paliers 1 et 2, puis relance un défi.';
-    var seen = {}, recap = d.errors.filter(function (e) {
-      if (seen[e]) return false; seen[e] = true; return true;
-    }).slice(0, 6);
+    var seen = {}, recap = [], ordre = [];
+    d.errors.forEach(function (e) {
+      if (!e) return;
+      if (!seen[e.theme]) { seen[e.theme] = {}; ordre.push(e.theme); }
+      if (!seen[e.theme][e.label]) { seen[e.theme][e.label] = true; recap.push(e); }
+    });
     var secs = Math.round((Date.now() - d.startedAt) / 1000);
+    var parTheme = ordre.map(function (th) {
+      return '<p class="eq-cap">' + th + '</p><ul>' +
+        recap.filter(function (e) { return e.theme === th; }).slice(0, 5)
+          .map(function (e) { return '<li>' + e.label + '</li>'; }).join('') + '</ul>';
+    }).join('');
     return '<section class="card end">' +
       '<span class="qkind">Défi terminé</span>' +
       '<div class="note">' + note + ' / 20</div>' +
       '<div class="appr">' + appr + '</div>' +
-      '<div class="meta">' + d.correct + ' / ' + d.total + ' bonnes réponses · temps : ' +
+      '<div class="meta">' + d.correct + ' / ' + d.total + ' bonnes réponses · ' +
+      (d.set === 'tout' ? 'bilan complet (tous les paliers)' : 'fonctions de base') + ' · temps : ' +
       Math.floor(secs / 60) + ' min ' + String(secs % 60).padStart(2, '0') + ' s · meilleure série : ' + d.best + '</div>' +
       '<div class="actions" style="justify-content:center">' +
-      '<button class="primary" id="btnDefiReplay">↻ Rejouer un défi</button></div>' +
-      (recap.length ? '<div class="recap"><h3>À revoir</h3><ul>' +
-        recap.map(function (r) { return '<li>' + r + '</li>'; }).join('') + '</ul></div>' : '') +
+      '<button class="primary" id="btnDefiReplay">↻ Rejouer</button></div>' +
+      (ordre.length ? '<div class="recap"><h3>À revoir par thème</h3>' + parTheme + '</div>' : '') +
       '</section>';
   }
 
@@ -1355,6 +1409,437 @@
   }
 
   /* =====================================================================
+     5 quater. PALIER 7 — équivalences remarquables
+     Expressions sous forme d'arbre : {op:'var'|'const'|'not'|'and'|'or'}
+     ===================================================================== */
+  function V(n) { return { op:'var', n:n }; }
+  function K(v) { return { op:'const', v:v }; }
+  function NT(a) { return { op:'not', a:a }; }
+  function AN(a, b) { return { op:'and', a:a, b:b }; }
+  function OR(a, b) { return { op:'or', a:a, b:b }; }
+
+  function exVars(e, acc) {
+    acc = acc || [];
+    if (e.op === 'var') { if (acc.indexOf(e.n) < 0) acc.push(e.n); return acc; }
+    if (e.op === 'not') return exVars(e.a, acc);
+    if (e.op === 'and' || e.op === 'or') { exVars(e.a, acc); return exVars(e.b, acc); }
+    return acc;
+  }
+  /* Ordre canonique A, B, C… sur toutes les variables d'une équivalence */
+  function exVarsOf(a, b) {
+    var all = exVars(a, []).concat(exVars(b, []));
+    var u = [];
+    all.forEach(function (n) { if (u.indexOf(n) < 0) u.push(n); });
+    return u.sort();
+  }
+  function combosOf(varsArr) {
+    var n = varsArr.length, out = [], i, k, v;
+    for (i = 0; i < Math.pow(2, n); i++) {
+      v = [];
+      for (k = 0; k < n; k++) { v.push((i >> (n - 1 - k)) & 1); }
+      out.push(v);
+    }
+    return out;
+  }
+  function envOf(varsArr, v) {
+    var env = {};
+    varsArr.forEach(function (n, i) { env[n] = v[i]; });
+    return env;
+  }
+  function exEval(e, env) {
+    if (e.op === 'var') return env[e.n] ? 1 : 0;
+    if (e.op === 'const') return e.v;
+    if (e.op === 'not') return exEval(e.a, env) ? 0 : 1;
+    if (e.op === 'and') return (exEval(e.a, env) && exEval(e.b, env)) ? 1 : 0;
+    return (exEval(e.a, env) || exEval(e.b, env)) ? 1 : 0;
+  }
+  function exHTML(e, ctx) {
+    if (e.op === 'var') return e.n;
+    if (e.op === 'const') return String(e.v);
+    if (e.op === 'not') {
+      var inner = (e.a.op === 'and' || e.a.op === 'or') ? '(' + exHTML(e.a) + ')' : exHTML(e.a, 'not');
+      return bar(inner);
+    }
+    var s = (e.op === 'and')
+      ? exHTML(e.a, 'and') + '·' + exHTML(e.b, 'and')
+      : exHTML(e.a, 'or') + ' + ' + exHTML(e.b, 'or');
+    return (ctx === 'and' && e.op === 'or') ? '(' + s + ')' : s;
+  }
+  /* Deux expressions sont équivalentes si leurs tables de vérité sont identiques */
+  function exEquiv(a, b) {
+    var vars = exVarsOf(a, b);
+    for (var i = 0; i < Math.pow(2, vars.length); i++) {
+      var env = {}, rest = i;
+      for (var k = vars.length - 1; k >= 0; k--) { env[vars[k]] = rest % 2; rest = Math.floor(rest / 2); }
+      if (exEval(a, env) !== exEval(b, env)) return false;
+    }
+    return true;
+  }
+
+  var REGLES = [
+    { nom:'Double négation', avant:NT(NT(V('A'))), apres:V('A'),
+      expl:'inverser deux fois, c\'est ne rien faire.' },
+    { nom:'Idempotence', avant:OR(V('A'), V('A')), apres:V('A'),
+      expl:'deux contacts commandés par le même interrupteur ne changent rien, en parallèle (A + A = A) comme en série (A · A = A).' },
+    { nom:'Élément neutre', avant:OR(V('A'), K(0)), apres:V('A'),
+      expl:'un contact toujours ouvert en parallèle ne change rien (A + 0 = A) ; un contact toujours fermé en série non plus (A · 1 = A).' },
+    { nom:'Élément absorbant', avant:AN(V('A'), K(0)), apres:K(0),
+      expl:'en série avec un contact toujours ouvert, la lampe ne peut jamais s\'allumer (A · 0 = 0) ; en parallèle avec un contact toujours fermé, elle est toujours allumée (A + 1 = 1).' },
+    { nom:'Complément', avant:OR(V('A'), NT(V('A'))), apres:K(1),
+      expl:'un interrupteur et son contact au repos : l\'un des deux est toujours fermé (A + NON A = 1), jamais les deux (A · NON A = 0).' },
+    { nom:'De Morgan (produit)', avant:NT(AN(V('A'), V('B'))), apres:OR(NT(V('A')), NT(V('B'))),
+      expl:'l\'inverse d\'un ET est un OU d\'inverses.' },
+    { nom:'De Morgan (somme)', avant:NT(OR(V('A'), V('B'))), apres:AN(NT(V('A')), NT(V('B'))),
+      expl:'l\'inverse d\'un OU est un ET d\'inverses.' },
+    { nom:'Absorption', avant:OR(V('A'), AN(V('A'), V('B'))), apres:V('A'),
+      expl:'si A est déjà vrai, la branche A·B ne sert à rien.' },
+    { nom:'Absorption (bis)', avant:AN(V('A'), OR(V('A'), V('B'))), apres:V('A'),
+      expl:'le contact A en série commande déjà tout : A·(A + B) = A.' },
+    { nom:'Distributivité', avant:AN(V('A'), OR(V('B'), V('C'))),
+      apres:OR(AN(V('A'), V('B')), AN(V('A'), V('C'))),
+      expl:'A·(B + C) = A·B + A·C : on développe comme en algèbre ordinaire.' },
+    { nom:'Redondance', avant:OR(V('A'), AN(NT(V('A')), V('B'))), apres:OR(V('A'), V('B')),
+      expl:'A + NON A·B = A + B : la branche NON A·B n\'apporte que les cas où A = 0.' },
+    { nom:'Termes complémentaires', avant:OR(AN(V('A'), V('B')), AN(V('A'), NT(V('B')))), apres:V('A'),
+      expl:'A·B + A·NON B = A : que B soit vrai ou faux, c\'est A qui décide.' }
+  ];
+
+  function rulesTable() {
+    var rows = REGLES.map(function (r) {
+      var ok = exEquiv(r.avant, r.apres);
+      return '<tr><td>' + r.nom + '</td><td>' + exHTML(r.avant) + ' </td><td>' + exHTML(r.apres) + '</td>' +
+        '<td class="verif">' + (ok ? '✅ vérifié' : '❌ FAUX') + '</td></tr>';
+    }).join('');
+    return '<table class="voc"><thead><tr><th>Règle</th><th>On part de…</th><th>… on obtient</th>' +
+      '<th>Vérification</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  }
+
+  function renderPalier7() {
+    var r = REGLES[state.r7] || REGLES[0];
+    var picker = REGLES.map(function (x, i) {
+      return '<button data-r7="' + i + '"' + (i === state.r7 ? ' class="active"' : '') + '>' + x.nom + '</button>';
+    }).join('');
+    var vars = exVarsOf(r.avant, r.apres);
+    var rows = combosOf(vars).map(function (v) {
+      var env = envOf(vars, v);
+      var a1 = exEval(r.avant, env), a2 = exEval(r.apres, env);
+      return '<tr' + (a1 !== a2 ? ' class="sel"' : '') + '>' +
+        v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
+        '<td class="out">' + a1 + '</td><td class="out">' + a2 + '</td></tr>';
+    }).join('');
+    return '<section class="card">' +
+      '<span class="qkind">Palier 7 · Avancé</span>' +
+      '<h2>Équivalences remarquables</h2>' +
+      '<p class="lead">Une même fonction peut s\'écrire de plusieurs façons. Les équivalences ci-dessous permettent ' +
+      'de <b>simplifier en justifiant</b> chaque étape. Elles sont vérifiées ici automatiquement, en comparant ' +
+      'les tables de vérité des deux écritures.</p>' +
+      rulesTable() +
+      '<h3>Vérifier une équivalence ligne par ligne</h3>' +
+      '<div class="fn-picker" id="f7Picker">' + picker + '</div>' +
+      '<p class="eq">' + exHTML(r.avant) + ' &nbsp;=&nbsp; ' + exHTML(r.apres) + '</p>' +
+      '<p class="eq-cap">' + r.nom + ' — ' + r.expl + '</p>' +
+      '<table class="tt" id="tt7"><thead><tr>' +
+        vars.map(function (v) { return '<th>' + v + '</th>'; }).join('') +
+        '<th>départ</th><th>arrivée</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="why"><b>Conclusion —</b> les deux colonnes sont identiques pour les <b>' +
+      Math.pow(2, vars.length) + '</b> combinaisons possibles : les deux écritures décrivent la <b>même fonction</b>, ' +
+      'donc le même montage. Simplifier, c\'est remplacer une écriture par une autre équivalente, en citant la règle.</div>' +
+      '</section>' +
+      '<section class="card" id="exoZone"></section>';
+  }
+
+  /* ---------- Mutations : fabriquer des réponses fausses ---------- */
+  function mutSwap(e) {
+    if (e.op === 'and') return OR(e.a, e.b);
+    if (e.op === 'or') return AN(e.a, e.b);
+    if (e.op === 'not') return NT(mutSwap(e.a) || e.a);
+    return null;
+  }
+  function mutDrop(e) {
+    if (e.op === 'and' || e.op === 'or') return (Math.random() < 0.5) ? e.a : e.b;
+    if (e.op === 'not') return NT(mutDrop(e.a) || e.a);
+    return null;
+  }
+  function freeVarOf(e) {
+    var cand = ['C','D','B'], u = exVars(e, []);
+    for (var i = 0; i < cand.length; i++) { if (u.indexOf(cand[i]) < 0) return cand[i]; }
+    return null;
+  }
+  function mutAdd(e) {
+    var n = freeVarOf(e);
+    return n ? AN(e, V(n)) : null;
+  }
+  function mutInvert(e, n) {
+    if (e.op === 'var') return (e.n === n) ? NT(V(n)) : null;
+    if (e.op === 'not') return (e.a.op === 'var' && e.a.n === n) ? V(n) : null;
+    if (e.op === 'const') return null;
+    var a = mutInvert(e.a, n), b = mutInvert(e.b, n);
+    if (a) return (e.op === 'and') ? AN(a, e.b) : OR(a, e.b);
+    if (b) return (e.op === 'and') ? AN(e.a, b) : OR(e.a, b);
+    return null;
+  }
+
+  /* ---------- Exercices du palier 7 ---------- */
+  function newEquivExercise(forceType) {
+    var type = forceType || (Math.random() < 0.6 ? 'choix' : 'regle');
+    for (var t = 0; t < 40; t++) {
+      var r = REGLES[Math.floor(Math.random() * REGLES.length)];
+      if (type === 'regle') {
+        if (r.avant.op === 'not' && r.apres.op === 'var') continue;   /* règle d'écriture, pas de transformation visible */
+        /* distracteurs : on écarte les règles qui, fonctionnellement, décrivent la même transformation
+           (sinon plusieurs réponses seraient justifiables) */
+        var noms = REGLES.filter(function (x) {
+          if (x.nom === r.nom) return false;
+          return !(exEquiv(x.avant, r.avant) && exEquiv(x.apres, r.apres));
+        }).map(function (x) { return x.nom; });
+        if (noms.length < 3) continue;
+        var wrongN = shuffle(noms.slice()).slice(0, 3).map(function (n) { return { html:n, ok:false }; });
+        var optsR = shuffleChoices([{ html:r.nom, ok:true }].concat(wrongN));
+        return {
+          kind:'equiv', type:'regle', r:r, avant:r.avant, apres:r.apres,
+          titre:'Quelle règle a été appliquée ?',
+          enonce:'On passe de <b>' + exHTML(r.avant) + '</b> à <b>' + exHTML(r.apres) + '</b> : ' +
+            'quelle équivalence remarquable a été utilisée ?',
+          expl:'',
+          options: optsR, choices: optsR,
+          picked:-1, done:false, ok:false
+        };
+      }
+      /* type « choix » : trouver une écriture équivalente */
+      var cible = r.apres;
+      var cands = [mutSwap(cible), mutDrop(cible), mutAdd(cible)];
+      exVars(cible, []).forEach(function (n, i) { if (i < 2) cands.push(mutInvert(cible, n)); });
+      cands.push(mutSwap(r.avant));
+      var seen = {}, wrong = [];
+      seen[exHTML(cible)] = true;
+      shuffle(cands).forEach(function (c) {
+        if (!c || wrong.length >= 3) return;
+        var k = exHTML(c);
+        if (seen[k]) return;
+        if (exEquiv(c, cible)) return;         /* un faux équivalent rendrait la question ambiguë */
+        seen[k] = true;
+        wrong.push({ html:k, ok:false });
+      });
+      if (wrong.length < 3) continue;
+      var opts = shuffleChoices([{ html:exHTML(cible), ok:true }].concat(wrong));
+      return { kind:'equiv', type:'choix', r:r, avant:r.avant, apres:r.apres, cible:cible,
+        titre:'Quelle écriture est équivalente ?',
+        enonce:'Parmi ces écritures, une seule décrit la même fonction que l\'expression ci-dessus : ' +
+          'les autres ont été vérifiées, leur table de vérité est différente.',
+        expl:'',
+        options:opts, choices:opts, picked:-1, done:false, ok:false };
+    }
+    /* repli : un cas toujours soluble */
+    var r0 = REGLES[5];
+    var o = [{ html:exHTML(r0.apres), ok:true },
+      { html:exHTML(r0.avant), ok:false },
+      { html:exHTML(AN(V('A'), V('B'))), ok:false },
+      { html:exHTML(OR(V('A'), V('B'))), ok:false }];
+    return { kind:'equiv', type:'choix', r:r0, avant:r0.avant, apres:r0.apres, cible:r0.apres,
+      titre:'Quelle écriture est équivalente ?',
+      enonce:'Parmi ces écritures, une seule décrit la même fonction que l\'expression ci-dessus.',
+      expl:'', options:shuffleChoices(o), choices:o, picked:-1, done:false, ok:false };
+  }
+
+  function renderEquivExercise(ex) {
+    var opts = ex.options.map(function (o, i) {
+      var cls = '';
+      if (ex.done) { if (o.ok) cls = 'ok'; else if (i === ex.picked) cls = 'ko'; }
+      return '<button data-opt="' + i + '"' + (cls ? ' class="' + cls + '"' : '') +
+        (ex.done ? ' disabled' : '') + '>' + o.html + '</button>';
+    }).join('');
+    var bonne = '';
+    ex.options.forEach(function (o) { if (o.ok) bonne = o.html; });
+    var fb = ex.done
+      ? '<div class="feedback show ' + (ex.ok ? 'good' : 'bad') + '" data-verdict="' + (ex.ok ? 'ok' : 'ko') + '">' +
+        '<span class="title">' + (ex.ok ? '✅ Exact !' : '❌ Non — réponse : ' + bonne) + '</span>' +
+        'Règle utilisée : <b>' + ex.r.nom + '</b> — ' + ex.r.expl + ' Les deux écritures ont la même table de vérité.</div>'
+      : '';
+    return '<span class="qkind">Mini-exercice</span>' +
+      '<h2>' + ex.titre + '</h2>' +
+      (ex.type === 'choix' ? '<p class="eq">' + exHTML(ex.avant) + '</p>' : '') +
+      '<p class="lead">' + ex.enonce + '</p>' +
+      '<div class="choices" id="choicesExo">' + opts + '</div>' + fb +
+      '<div class="actions">' +
+      (ex.done ? '<button class="primary" id="btnExoNext">Nouvel exercice ▶</button>' : '') +
+      '</div>';
+  }
+
+  /* ---------- Formes canoniques génériques (2 variables ou plus) ---------- */
+  function lignesOf(calcFn, varsArr) {
+    return combosOf(varsArr).map(function (v, i) { return { i:i, v:v, o:calcFn(v) }; });
+  }
+  function onesOf2(calcFn, varsArr) {
+    return lignesOf(calcFn, varsArr).filter(function (r) { return r.o === 1; });
+  }
+  function canoniqueOf(calcFn, varsArr) {
+    var m = onesOf2(calcFn, varsArr);
+    if (!m.length) return 'S = 0';
+    if (m.length === combosOf(varsArr).length) return 'S = 1';
+    return 'S = ' + m.map(function (r) {
+      return r.v.map(function (x, k) { return x ? varsArr[k] : bar(varsArr[k]); }).join('·');
+    }).join(' + ');
+  }
+  function sigmaOf(calcFn, varsArr) {
+    var m = onesOf2(calcFn, varsArr);
+    if (!m.length) return 'S = 0';
+    if (m.length === combosOf(varsArr).length) return 'S = 1';
+    return 'S = Σ m(' + m.map(function (r) { return r.i; }).join(', ') + ')';
+  }
+
+  /* =====================================================================
+     5 quinquies. PALIER 8 — missions et bilan
+     ===================================================================== */
+  /* Vérifie que deux fonctions définies sur les mêmes variables ont la même table */
+  function tableEquiv(c1, c2, varsArr) {
+    var L = combosOf(varsArr);
+    for (var i = 0; i < L.length; i++) { if (c1(L[i]) !== c2(L[i])) return false; }
+    return true;
+  }
+
+  var MISSIONS = [
+    { id:'m1', titre:'Mission 1 — Éclairage d\'un atelier', vars:['A','B'],
+      conv:['A = 1 : présence détectée', 'B = 1 : interrupteur fermé'],
+      enonce:'L\'éclairage (S = 1) s\'allume si le <b>détecteur de présence A</b> est actif <b>et</b> que ' +
+        'l\'<b>interrupteur B</b> est fermé.',
+      eq:'S = A·B', montage:'un ET : deux contacts en série (A et B).',
+      calc:function (v) { return (v[0] && v[1]) ? 1 : 0; },
+      options:[ { eq:'S = A·B', ok:true, calc:function (v) { return (v[0] && v[1]) ? 1 : 0; } },
+                { eq:'S = A + B', calc:function (v) { return (v[0] || v[1]) ? 1 : 0; } },
+                { eq:'S = A·' + bar('B'), calc:function (v) { return (v[0] && !v[1]) ? 1 : 0; } },
+                { eq:'S = ' + bar('A') + '·B', calc:function (v) { return (!v[0] && v[1]) ? 1 : 0; } } ],
+      expl:'« et » se traduit par <b>·</b> : les deux conditions doivent être vraies en même temps.' },
+    { id:'m2', titre:'Mission 2 — Alarme d\'un local technique', vars:['A','B','C'],
+      conv:['A = 1 : détecteur actif', 'B = 1 : contact ouvert', 'C = 1 : code saisi'],
+      enonce:'L\'alarme (S = 1) sonne si le <b>détecteur A</b> est actif <b>ou</b> si le <b>contact B</b> est ouvert, ' +
+        '<b>sauf</b> si le <b>code C</b> est saisi.',
+      eq:'S = (A + B)·' + bar('C'), montage:'un OU (A, B) en série avec le contact au repos C.',
+      calc:function (v) { return ((v[0] || v[1]) && !v[2]) ? 1 : 0; },
+      options:[ { eq:'S = (A + B)·' + bar('C'), ok:true, calc:function (v) { return ((v[0] || v[1]) && !v[2]) ? 1 : 0; } },
+                { eq:'S = A + B + ' + bar('C'), calc:function (v) { return (v[0] || v[1] || !v[2]) ? 1 : 0; } },
+                { eq:'S = A·B·' + bar('C'), calc:function (v) { return (v[0] && v[1] && !v[2]) ? 1 : 0; } },
+                { eq:'S = (A + B)·C', calc:function (v) { return ((v[0] || v[1]) && v[2]) ? 1 : 0; } } ],
+      expl:'« ou » → <b>+</b>, et « sauf si C » → on multiplie le tout par <b>' + bar('C') +
+        '</b> : les parenthèses sont obligatoires.' },
+    { id:'m3', titre:'Mission 3 — Tri automatique de pièces', vars:['A','B','C'],
+      conv:['A = 1 : couleur conforme', 'B = 1 : taille conforme', 'C = 1 : pièce déjà marquée'],
+      enonce:'La pièce est éjectée (S = 1) si les <b>capteurs A et B</b> sont actifs, <b>sauf</b> si la pièce est ' +
+        '<b>déjà marquée C</b>.',
+      eq:'S = A·B·' + bar('C'), montage:'un ET (A, B) en série avec le contact au repos C.',
+      calc:function (v) { return (v[0] && v[1] && !v[2]) ? 1 : 0; },
+      options:[ { eq:'S = A·B·' + bar('C'), ok:true, calc:function (v) { return (v[0] && v[1] && !v[2]) ? 1 : 0; } },
+                { eq:'S = (A + B)·' + bar('C'), calc:function (v) { return ((v[0] || v[1]) && !v[2]) ? 1 : 0; } },
+                { eq:'S = A·B + ' + bar('C'), calc:function (v) { return ((v[0] && v[1]) || !v[2]) ? 1 : 0; } },
+                { eq:'S = A·B·C', calc:function (v) { return (v[0] && v[1] && v[2]) ? 1 : 0; } } ],
+      expl:'deux conditions à réunir (<b>·</b>) et une à exclure (<b>·' + bar('C') + '</b>).' },
+    { id:'m4', titre:'Mission 4 — Aiguillage d\'un convoyeur', vars:['A','B'],
+      conv:['A = 1 : cellule 1 détecte', 'B = 1 : cellule 2 détecte'],
+      enonce:'Le convoyeur dévie (S = 1) si <b>une seule</b> des deux cellules A ou B détecte une pièce — ' +
+        '« l\'une ou l\'autre, mais pas les deux ».',
+      eq:'S = A ⊕ B', montage:'une porte OU-exclusif (repère =1) : 1 si les entrées sont différentes.',
+      calc:function (v) { return (v[0] !== v[1]) ? 1 : 0; },
+      options:[ { eq:'S = A ⊕ B', ok:true, calc:function (v) { return (v[0] !== v[1]) ? 1 : 0; } },
+                { eq:'S = A + B', calc:function (v) { return (v[0] || v[1]) ? 1 : 0; } },
+                { eq:'S = A·B', calc:function (v) { return (v[0] && v[1]) ? 1 : 0; } },
+                { eq:'S = A·' + bar('B'), calc:function (v) { return (v[0] && !v[1]) ? 1 : 0; } } ],
+      expl:'« mais pas les deux » exclut les cas 00 et 11 : c\'est le <b>OU-exclusif</b>.' }
+  ];
+
+  function newMissionExercise() {
+    for (var t = 0; t < 30; t++) {
+      var M = MISSIONS[Math.floor(Math.random() * MISSIONS.length)];
+      var list = [], seen = {};
+      shuffle(M.options.slice()).forEach(function (o) {
+        if (list.length >= 4 || seen[o.eq]) return;
+        /* l'app vérifie elle-même l'équivalence : la bonne réponse doit l'être,
+           et aucun distracteur ne doit l'être (sinon la question serait ambiguë) */
+        var eq = tableEquiv(o.calc, M.calc, M.vars);
+        if (!!o.ok !== eq) return;
+        seen[o.eq] = true;
+        list.push({ html:o.eq, ok:!!o.ok });
+      });
+      if (list.length === 4) return { kind:'mission', m:M, options:list, picked:-1, done:false, ok:false };
+    }
+    return { kind:'mission', m:MISSIONS[0], picked:-1, done:false, ok:false,
+      options:[ { html:'S = A·B', ok:true }, { html:'S = A + B', ok:false },
+                { html:'S = A·' + bar('B'), ok:false }, { html:'S = ' + bar('A') + '·B', ok:false } ] };
+  }
+
+  function renderMissionExercise(ex) {
+    var M = ex.m;
+    var opts = ex.options.map(function (o, i) {
+      var cls = '';
+      if (ex.picked >= 0) { if (o.ok) cls = 'ok'; else if (i === ex.picked) cls = 'ko'; }
+      return '<button data-opt="' + i + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + o.html + '</button>';
+    }).join('');
+    var bonne = '';
+    ex.options.forEach(function (o) { if (o.ok) bonne = o.html; });
+    var fb = ex.picked >= 0
+      ? '<div class="feedback show ' + (ex.ok ? 'good' : 'bad') + '" data-verdict="' + (ex.ok ? 'ok' : 'ko') + '">' +
+        '<span class="title">' + (ex.ok ? '✅ Bonne traduction !' : '❌ Ce n\'est pas la bonne équation') + '</span>' +
+        'La traduction attendue est <b>' + bonne + '</b>. ' + M.expl + '</div>'
+      : '';
+    var dossier = '';
+    if (ex.ok) {
+      var L = lignesOf(M.calc, M.vars);
+      var mins = L.filter(function (r) { return r.o === 1; });
+      var table = '<table class="tt"><thead><tr>' +
+        M.vars.map(function (v) { return '<th>' + v + '</th>'; }).join('') + '<th>S</th></tr></thead><tbody>' +
+        L.map(function (r) {
+          return '<tr class="' + (r.o ? 'one' : '') + '">' +
+            r.v.map(function (x) { return '<td>' + x + '</td>'; }).join('') +
+            '<td class="out">' + r.o + '</td></tr>';
+        }).join('') + '</tbody></table>';
+      dossier = '<h3>2. Le dossier technique corrigé</h3>' +
+        '<table class="voc"><tbody>' +
+        '<tr><th>Variables</th><td>' + M.vars.map(function (v, i) { return '<b>' + v + '</b> : ' + M.conv[i]; }).join('<br>') + '</td></tr>' +
+        '<tr><th>Équation</th><td>' + M.eq + '</td></tr>' +
+        '<tr><th>Montage</th><td>' + M.montage + '</td></tr>' +
+        '<tr><th>Lignes à 1</th><td>' + (mins.length
+          ? mins.map(function (r) { return r.v.join('') + ' <span class="mini">m' + r.i + '</span>'; }).join(' &nbsp;·&nbsp; ')
+          : 'aucune') + '</td></tr>' +
+        '<tr><th>Forme canonique</th><td>' + canoniqueOf(M.calc, M.vars) + '</td></tr>' +
+        '<tr><th>Écriture condensée</th><td>' + sigmaOf(M.calc, M.vars) + '</td></tr>' +
+        '</tbody></table>' + table;
+    }
+    return '<span class="qkind">Mission</span>' +
+      '<h2>' + M.titre + '</h2>' +
+      '<p class="lead">' + M.enonce + '</p>' +
+      '<h3>1. Traduire l\'énoncé en équation</h3>' +
+      '<div class="choices" id="choicesExo">' + opts + '</div>' + fb + dossier +
+      '<div class="actions">' +
+      (ex.picked >= 0 ? '<button class="primary" id="btnExoNext">Mission suivante ▶</button>' : '') +
+      '</div>';
+  }
+
+  function renderPalier8() {
+    return '<section class="card">' +
+      '<span class="qkind">Palier 8 · Avancé</span>' +
+      '<h2>Missions : le cahier des charges complet</h2>' +
+      '<p class="lead">Tout est réuni : lire un énoncé, nommer les variables, écrire l\'équation, vérifier avec la ' +
+      'table de vérité, puis produire la forme canonique et l\'écriture condensée. Chaque mission fournit le ' +
+      '<b>dossier technique corrigé</b>.</p>' +
+      '<h3>La méthode</h3>' +
+      '<ol>' +
+      '<li>Nommer une variable par information d\'entrée.</li>' +
+      '<li>Fixer la convention : que signifie <b>1</b> pour chaque variable ?</li>' +
+      '<li>Repérer les mots de la logique (« et », « ou », « sauf si », « mais pas les deux »).</li>' +
+      '<li>Écrire l\'équation, puis la vérifier sur la table de vérité.</li>' +
+      '<li>Terminer par la forme canonique et l\'écriture condensée Σ m(...).</li>' +
+      '</ol>' +
+      '</section>' +
+      '<section class="card" id="exoZone"></section>' +
+      '<section class="card">' +
+      '<span class="qkind">Bilan</span>' +
+      '<h2>Bilan complet (note sur 20)</h2>' +
+      '<p class="lead">Dix questions tirées de tous les paliers : fonctions de base, fonctions universelles, ' +
+      'OU-exclusif, forme canonique et équivalences remarquables. Le bilan se termine par un récapitulatif ' +
+      'groupé par thème, pour savoir précisément quoi revoir.</p>' +
+      '<div class="actions"><button class="primary" data-bilan="tout">Lancer le bilan complet ▶</button></div>' +
+      '</section>';
+  }
+
+  /* =====================================================================
      6. RENDU
      ===================================================================== */
   function render() {
@@ -1366,6 +1851,8 @@
     else if (state.view === 'p4') { html = renderPalier4(); }
     else if (state.view === 'p5') { html = renderPalier5(); }
     else if (state.view === 'p6') { html = renderPalier6(); }
+    else if (state.view === 'p7') { html = renderPalier7(); }
+    else if (state.view === 'p8') { html = renderPalier8(); }
     else if (state.view === 'defi') html = viewDefi();
     else if (state.view === 'memo') html = viewMemo();
     el.view.innerHTML = html;
@@ -1392,6 +1879,14 @@
       if (!state.ex || state.ex.kind !== 'scenario') state.ex = newScenarioExercise();
       renderExerciseInto(false);
     }
+    if (state.view === 'p7') {
+      if (!state.ex || state.ex.kind !== 'equiv') state.ex = newEquivExercise();
+      renderExerciseInto(false);
+    }
+    if (state.view === 'p8') {
+      if (!state.ex || state.ex.kind !== 'mission') state.ex = newMissionExercise();
+      renderExerciseInto(false);
+    }
     if (state.view === 'defi') { wireDefi(); }
     updateStats();
     scheduleResize();
@@ -1412,6 +1907,8 @@
       : state.view === 'p4' ? 'Palier 4 · du français à la logique'
       : state.view === 'p5' ? 'Palier 5 · fonctions universelles'
       : state.view === 'p6' ? 'Palier 6 · OU-exclusif'
+      : state.view === 'p7' ? 'Palier 7 · équivalences remarquables'
+      : state.view === 'p8' ? 'Palier 8 · missions'
       : state.view === 'defi' ? (state.defi ? 'Défi · question ' + Math.min(state.defi.index + 1, state.defi.total) + ' / ' + state.defi.total : 'Défi')
       : 'Mémo';
   }
@@ -1616,6 +2113,34 @@
       if (nx4) nx4.addEventListener('click', function () { state.ex = newScenarioExercise(); renderExerciseInto(false); });
       return;
     }
+    if (ex.kind === 'equiv') {
+      Array.prototype.forEach.call(document.querySelectorAll('#choicesExo button'), function (b) {
+        b.addEventListener('click', function () {
+          if (ex.done) return;
+          var i = Number(b.getAttribute('data-opt'));
+          ex.picked = i; ex.done = true; ex.ok = !!ex.options[i].ok;
+          if (ex.ok) state.score++;
+          renderExerciseInto(false); updateStats();
+        });
+      });
+      var nx5 = document.getElementById('btnExoNext');
+      if (nx5) nx5.addEventListener('click', function () { state.ex = newEquivExercise(); renderExerciseInto(false); });
+      return;
+    }
+    if (ex.kind === 'mission') {
+      Array.prototype.forEach.call(document.querySelectorAll('#choicesExo button'), function (b) {
+        b.addEventListener('click', function () {
+          if (ex.picked >= 0) return;
+          var i = Number(b.getAttribute('data-opt'));
+          ex.picked = i; ex.ok = !!ex.options[i].ok;
+          if (ex.ok) state.score++;
+          renderExerciseInto(false); updateStats();
+        });
+      });
+      var nx6 = document.getElementById('btnExoNext');
+      if (nx6) nx6.addEventListener('click', function () { state.ex = newMissionExercise(); renderExerciseInto(false); });
+      return;
+    }
     var table = document.getElementById('ttExo');
     if (table && !ex.done) {
       Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function (tr) {
@@ -1648,38 +2173,80 @@
   /* =====================================================================
      8. DÉFI
      ===================================================================== */
-  function startDefi() {
+  function startDefi(set) {
     state.defi = {
       total:10, index:0, correct:0, streak:0, best:0, errors:[], asked:{},
+      set:set || 'bases',
       startedAt:Date.now(), finished:false, q:null
     };
     state.defi.q = newDefiQuestion();
   }
 
+  /* Banques de questions, avec le thème pour le récapitulatif final */
+  var DEFI_BASES = [
+    { fn:'NON', vars:['A'], theme:'Palier 1-2 · NON, ET, OU' },
+    { fn:'ET',  vars:['A','B'], theme:'Palier 1-2 · NON, ET, OU' },
+    { fn:'ET',  vars:['A','B','C'], theme:'Palier 1-2 · NON, ET, OU' },
+    { fn:'OU',  vars:['A','B'], theme:'Palier 1-2 · NON, ET, OU' },
+    { fn:'OU',  vars:['A','B','C'], theme:'Palier 1-2 · NON, ET, OU' }
+  ];
+  var DEFI_AVANCE = [
+    { fn:'NAND', vars:['A','B'], theme:'Palier 5 · NON-ET et NON-OU' },
+    { fn:'NAND', vars:['A','B','C'], theme:'Palier 5 · NON-ET et NON-OU' },
+    { fn:'NOR',  vars:['A','B'], theme:'Palier 5 · NON-ET et NON-OU' },
+    { fn:'NOR',  vars:['A','B','C'], theme:'Palier 5 · NON-ET et NON-OU' },
+    { fn:'XOR',  vars:['A','B'], theme:'Palier 6 · OU-exclusif' },
+    { fn:'ET',   vars:['A','B','C'], theme:'Palier 3 · forme canonique' },
+    { fn:'OU',   vars:['A','B'], theme:'Palier 1-2 · NON, ET, OU' }
+  ];
+
   function newDefiQuestion() {
-    for (var t = 0; t < 60; t++) {
-      var type = Math.random() < 0.5 ? 'combi' : 'qcm';
-      var pool = [
-        { fn:'NON', vars:['A'] },
-        { fn:'ET',  vars:['A','B'] },
-        { fn:'ET',  vars:['A','B','C'] },
-        { fn:'OU',  vars:['A','B'] },
-        { fn:'OU',  vars:['A','B','C'] }
-      ];
+    var avance = state.defi.set === 'tout';
+    var pool = avance ? DEFI_BASES.concat(DEFI_AVANCE) : DEFI_BASES;
+    var kinds = avance ? ['combi','combi','qcm','qcm','sigma','equiv','equiv'] : ['combi','qcm'];
+    for (var t = 0; t < 80; t++) {
+      var type = kinds[Math.floor(Math.random() * kinds.length)];
+
+      /* QCM d'équivalence (palier 7) */
+      if (type === 'equiv') {
+        var e = newEquivExercise();
+        if (!e) continue;
+        var ke = 'equiv|' + e.r.nom + '|' + e.type + '|' + Math.floor(Math.random() * 4);
+        if (state.defi.asked[ke]) continue;
+        state.defi.asked[ke] = true;
+        e.theme = 'Palier 7 · équivalences remarquables';
+        e.expl = 'Règle utilisée : <b>' + e.r.nom + '</b> — ' + e.r.expl;
+        e.errorLabel = 'équivalence : ' + exHTML(e.avant) + ' → ' + exHTML(e.apres);
+        return e;
+      }
+
       var p = pool[Math.floor(Math.random() * pool.length)];
       var key = type + '|' + p.fn + '|' + p.vars.join('');
       if (state.defi.asked[key]) continue;
       state.defi.asked[key] = true;
+
       if (type === 'combi') return {
         kind:'combi', fn:p.fn, vars:p.vars, sel:{}, done:false, ok:false,
+        theme:p.theme,
+        errorLabel:'S = 1 pour ' + onesOf(p.fn, p.vars).join(', ') + ' &nbsp;— entrées ' + p.vars.join(', '),
         given:['equation','montage','symbol'][Math.floor(Math.random() * 3)]
       };
+
+      if (type === 'sigma') {
+        var m = onesOf(p.fn, p.vars).map(function (c) { return parseInt(c, 2); });
+        return { kind:'qcm', fn:p.fn, vars:p.vars, shown:'equation', theme:'Palier 3 · forme canonique',
+          choices: sigmaChoices(m, p.vars.length),
+          expl:'La fonction vaut 1 pour les lignes <b>' + m.join(', ') + '</b> : ce sont ses mintermes, ' +
+            'que l\'on note Σ m(...).',
+          errorLabel:'écriture condensée de ' + FUNCS[p.fn].eq(p.vars),
+          done:false, ok:false, picked:-1 };
+      }
 
       /* QCM : 4 équations, une seule correcte (tables différentes) */
       var good = FUNCS[p.fn].eq(p.vars);
       var cands = [];
-      ['ET','OU'].forEach(function (id) {
-        if (id !== p.fn) cands.push(FUNCS[id].eq(p.vars));
+      ['ET','OU','NAND','NOR'].forEach(function (id) {
+        if (id !== p.fn && FUNCS[id].maxVars >= p.vars.length) cands.push(FUNCS[id].eq(p.vars));
       });
       p.vars.forEach(function (v) { cands.push('S = ' + bar(v)); });
       var seen = {}; seen[good] = true;
@@ -1688,16 +2255,41 @@
       if (wrong.length < 3) continue;
       var choices = [{ html:good, ok:true }].concat(wrong.map(function (w) { return { html:w, ok:false }; }));
       return { kind:'qcm', fn:p.fn, vars:p.vars, choices:shuffleChoices(choices), done:false, ok:false, picked:-1,
-               key:key };
+               theme:p.theme, expl:FUNCS[p.fn].why,
+               errorLabel:FUNCS[p.fn].eq(p.vars) + ' &nbsp;— entrées ' + p.vars.join(', ') };
     }
-    return { kind:'combi', fn:'ET', vars:['A','B'], sel:{}, done:false, ok:false, given:'equation' };
+    return { kind:'combi', fn:'ET', vars:['A','B'], sel:{}, done:false, ok:false, given:'equation',
+             theme:'Palier 1-2 · NON, ET, OU', errorLabel:'S = 1 pour 11' };
+  }
+
+  /* Propositions de Σ m(...) : la bonne, puis des listes fausses et vérifiées */
+  function sigmaChoices(m, nbits) {
+    var total = Math.pow(2, nbits), comp = [], i;
+    for (i = 0; i < total; i++) { if (m.indexOf(i) < 0) comp.push(i); }
+    var cands = [];
+    if (comp.length && comp.length < total) cands.push(comp);
+    if (m.length > 1) cands.push(m.slice(1));
+    if (comp.length) cands.push(m.concat([comp[0]]).sort(function (a, b) { return a - b; }));
+    cands.push(m.map(function (x) { return (x + 1) % total; }).sort(function (a, b) { return a - b; }));
+    cands.push([total - 1 - m[0]]);
+    var seen = {}; seen[eqSigma(m)] = true;
+    var wrong = [];
+    shuffle(cands).forEach(function (c) {
+      var s = eqSigma(c);
+      if (!seen[s] && wrong.length < 3) { seen[s] = true; wrong.push({ html:s, ok:false }); }
+    });
+    for (var k = 0; wrong.length < 3 && k < 40; k++) {
+      var r = Math.floor(Math.random() * total), s2 = eqSigma([r]);
+      if (!seen[s2]) { seen[s2] = true; wrong.push({ html:s2, ok:false }); }
+    }
+    return shuffleChoices([{ html:eqSigma(m), ok:true }].concat(wrong));
   }
 
   function wireDefi() {
     var d = state.defi;
     if (!d || d.finished) {
       var rp = document.getElementById('btnDefiReplay');
-      if (rp) rp.addEventListener('click', function () { startDefi(); render(); });
+      if (rp) rp.addEventListener('click', function () { startDefi(d && d.set); render(); });
       return;
     }
     var q = d.q;
@@ -1715,7 +2307,7 @@
         finishDefiQuestion(okNow);
       });
     }
-    if (q.kind === 'qcm' && !q.done) {
+    if ((q.kind === 'qcm' || q.kind === 'equiv') && !q.done) {
       Array.prototype.forEach.call(document.querySelectorAll('#choicesDefi button'), function (b, i) {
         b.addEventListener('click', function () {
           q.picked = i;
@@ -1746,7 +2338,10 @@
       if (d.streak > d.best) d.best = d.streak;
     } else {
       d.streak = 0;
-      d.errors.push(FUNCS[q.fn].eq(q.vars) + ' &nbsp;— entrées ' + q.vars.join(', '));
+      d.errors.push({
+        theme: q.theme || 'Palier 1-2 · NON, ET, OU',
+        label: q.errorLabel || (FUNCS[q.fn].eq(q.vars) + ' &nbsp;— entrées ' + q.vars.join(', '))
+      });
     }
     render();
   }
@@ -1813,6 +2408,12 @@
       }
       render();
       return;
+    }
+    /* règle étudiée au palier 7 */
+    if (b && b.hasAttribute('data-r7')) { state.r7 = Number(b.getAttribute('data-r7')); render(); return; }
+    /* bilan complet : défi tiré de tous les paliers */
+    if (b && b.hasAttribute('data-bilan')) {
+      state.view = 'defi'; state.ex = null; startDefi(b.getAttribute('data-bilan')); render(); return;
     }
     /* la table de vérité pilote le montage */
     var tr = ev.target.closest ? ev.target.closest('tr[data-combo]') : null;

@@ -9,12 +9,19 @@ formalisation suit — symbole normalisé (NF EN 60617), équation, table de vé
 
 - **Palier 1 · 0 et 1** — la variable logique, ses deux états, la table de vérité.
 - **Palier 2 · NON, ET, OU** — les trois fonctions de base, les contacts en série et en parallèle.
+- **Palier 3 · Canonique** — un produit par ligne à 1, la notation condensée Σ m(...).
+- **Palier 4 · Énoncés** — traduire un cahier des charges en variables et en équation, puis vérifier un cas.
+- **Palier 5 · NON-ET / NON-OU** — les fonctions universelles, et pourquoi une seule porte suffit.
+- **Palier 6 · OU-exclusif** — « l'un ou l'autre, mais pas les deux », parité et détection d'incohérence.
+- **Palier 7 · Équivalences** — les lois de De Morgan, l'absorption, la distributivité, vérifiées par les tables.
+- **Palier 8 · Missions** — un dossier technique complet par énoncé, puis un bilan noté sur 20.
 
-Chaque écran présente à gauche le montage (interrupteurs, contacts, lampe) et à droite l'écriture
-formelle correspondante. La sortie est notée **S**.
+Chaque écran présente à gauche le montage (interrupteurs, contacts, lampe ou logigramme) et à droite
+l'écriture formelle correspondante, mise à jour en même temps. La sortie est notée **S**.
 
-Les paliers étiquetés **Avancé** (forme canonique, fonctions universelles, OU-exclusif, lois de De Morgan,
-missions) viendront compléter l'application.
+L'onglet **Défi** enchaîne 10 questions notées sur 20, l'onglet **Mémo** récapitule les symboles, les
+tables et les identités, et le **bilan du palier 8** tire ses questions de tous les paliers en terminant
+par un récapitulatif groupé par thème.
 
 <iframe
   id="logique-frame"
