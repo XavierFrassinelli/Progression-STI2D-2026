@@ -1,9 +1,8 @@
 ---
-password: Opeth2025
+protected: prof
 ---
 
-# Page secrète
-Si vous voyez ce texte, c'est que le mot de passe a fonctionné !
+<div id="prof-gate" hidden></div>
 
 
 # Idéées et faits importants
