@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Energy Chain - Intégration</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <div id="energychain-root" class="p-6">
+    <!-- Le bundle montera l'app ici si exporté en UMD; sinon le bundle doit appeler ReactDOM.render -->
+    <div id="root"></div>
+  </div>
+
+  <!-- Script bundle (local) -->
+  <script src="./bundle.energychain.js"></script>
+</body>
+</html>
