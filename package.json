@@ -1,13 +1,8 @@
 {
-  "name": "sauvegarde_donnees",
+  "name": "progression-sti2d-2026",
   "version": "1.0.0",
-  "description": "sauvegarde des compétences",
-  "main": "sauvegarde.js",
-  "directories": {
-    "doc": "docs"
-  },
+  "description": "Progression STI2D 2024-2026 - site MkDocs Material et mini-apps interactives",
   "scripts": {
-    "test": "node sauvegarde.js",
     "build": "webpack --config webpack.config.cjs",
     "start": "webpack serve --open",
     "start:ai": "node scripts/ai-proxy.mjs",
@@ -19,24 +14,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Lidlkidjoe/Progression-STI2D-2025.git"
+    "url": "git+https://github.com/XavierFrassinelli/Progression-STI2D-2026.git"
   },
   "keywords": [
-    "sauvergarde",
-    "compétences",
-    "firebase",
-    "données"
+    "sti2d",
+    "mkdocs",
+    "progression",
+    "education"
   ],
   "type": "module",
   "author": "xavier frassinelli",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Lidlkidjoe/Progression-STI2D-2025/issues"
+    "url": "https://github.com/XavierFrassinelli/Progression-STI2D-2026/issues"
   },
-  "homepage": "https://github.com/Lidlkidjoe/Progression-STI2D-2025#readme",
+  "homepage": "https://github.com/XavierFrassinelli/Progression-STI2D-2026#readme",
   "dependencies": {
     "dotenv": "^17.3.1",
-    "firebase": "^11.6.1",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
