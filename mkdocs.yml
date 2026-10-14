@@ -53,6 +53,7 @@ nav:
         - PFS : chaine_info/Mechanics.md
         - Logique combinatoire : chaine_info/logique.md
   - Terminale: Terminale.md
+  - 🔒 Espace professeurs: https://xavierfrassinelli.github.io/generateur-sti2d-v3-independant/
   - Ressources:
     - Ressources: Ressources.md
     - Apprendre: apprendre.md
@@ -75,6 +76,7 @@ markdown_extensions:
 
 extra_javascript:
   - js/legacy-path-fix.js
+  - js/external-links.js
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 
